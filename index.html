@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Autos</title>
+    <!-- Cargamos Tailwind CSS para el diseño responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+            <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Fleet Control</h1>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="emailInput" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="ejemplo@correo.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Contraseña / PIN</label>
+                    <input type="password" id="passInput" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="* * * * * *">
+                </div>
+                <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">Ingresar</button>
+                <p id="loginError" class="text-red-500 text-sm text-center hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE LA APP (Dashboard) - Oculta al principio -->
+    <div id="appScreen" class="hidden min-h-screen flex flex-col md:flex-row">
+        
+        <!-- Barra Lateral (PC) / Menú Superior (Móvil) -->
+        <nav class="bg-gray-800 text-white w-full md:w-64 md:min-h-screen flex md:flex-col justify-between md:justify-start">
+            <div class="p-4 hidden md:block">
+                <h2 class="text-xl font-bold">Fleet Control</h2>
+            </div>
+            <div class="flex md:flex-col w-full">
+                <button onclick="showSection('dashboard')" class="w-full text-left p-4 hover:bg-gray-700">Dashboard</button>
+                <button onclick="showSection('cargar')" class="w-full text-left p-4 hover:bg-gray-700">Cargar Gasto</button>
+                <button onclick="showSection('historial')" class="w-full text-left p-4 hover:bg-gray-700">Historial</button>
+                <button id="adminVehiculosBtn" onclick="showSection('vehiculos')" class="hidden w-full text-left p-4 hover:bg-gray-700">Gestionar Autos</button>
+            </div>
+            <div class="p-4">
+                <button onclick="handleLogout()" class="text-sm text-red-400 hover:text-red-300">Cerrar Sesión</button>
+            </div>
+        </nav>
+
+        <!-- Contenido Principal -->
+        <main class="flex-1 p-4 md:p-8">
+            
+            <!-- Sección: Dashboard -->
+            <div id="section-dashboard" class="app-section">
+                <h1 class="text-2xl font-bold mb-6">Bienvenido, <span id="userName"></span></h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded shadow">
+                        <h3 class="text-gray-500 text-sm">Total Vehículos</h3>
+                        <p class="text-3xl font-bold" id="totalVehiculos">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded shadow">
+                        <h3 class="text-gray-500 text-sm">Tus Gastos del Mes</h3>
+                        <p class="text-3xl font-bold">$0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Cargar Gasto -->
+            <div id="section-cargar" class="app-section hidden">
+                <h1 class="text-2xl font-bold mb-6">Cargar Nuevo Gasto</h1>
+                <div class="bg-white p-6 rounded shadow max-w-lg">
+                    <label class="block text-sm font-medium text-gray-700">Seleccionar Vehículo (VIN / Modelo)</label>
+                    <select id="vinSelect" class="mt-1 mb-4 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <option value="">Cargando vehículos...</option>
+                    </select>
+
+                    <label class="block text-sm font-medium text-gray-700">Monto ($)</label>
+                    <input type="number" id="montoInput" class="mt-1 mb-4 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="0.00">
+
+                    <label class="block text-sm font-medium text-gray-700">Concepto</label>
+                    <input type="text" id="conceptoInput" class="mt-1 mb-4 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Gasolina, Mantenimiento, etc.">
+
+                    <label class="block text-sm font-medium text-gray-700">Foto de Factura / Ticket</label>
+                    <input type="file" id="fotoInput" accept="image/*" class="mt-1 mb-4 block w-full text-sm text-gray-500 border border-gray-300 rounded-md p-2">
+
+                    <button onclick="submitGasto()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Guardar Gasto</button>
+                </div>
+            </div>
+
+            <!-- Sección: Historial -->
+            <div id="section-historial" class="app-section hidden">
+                <h1 class="text-2xl font-bold mb-6">Historial de Gastos</h1>
+                <div class="bg-white p-4 rounded shadow">
+                    <p>Aquí pondremos la tabla con los filtros.</p>
+                </div>
+            </div>
+
+            <!-- Sección: Gestionar Vehículos (Solo Admin) -->
+            <div id="section-vehiculos" class="app-section hidden">
+                <h1 class="text-2xl font-bold mb-6">Gestión de Vehículos</h1>
+                <div class="bg-white p-4 rounded shadow">
+                    <p>Aquí los administradores podrán agregar, editar o eliminar autos.</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- AQUÍ VA TODO NUESTRO JAVASCRIPT -->
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwZET1YuwcuGQdVjJzLDKCbUbajXePy9feQo4k3CPEDqQXqogqDbTPeGGd1yDh5ZxDhdQ/exec'; // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
+        let currentUser = null;
+
+        // Manejo de Sesión
+        function handleLogin() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passInput').value;
+            const errorP = document.getElementById('loginError');
+
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'login', email: email, password: password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    currentUser = data.user;
+                    localStorage.setItem('fleetUser', JSON.stringify(currentUser));
+                    showApp();
+                } else {
+                    errorP.textContent = "Usuario o contraseña incorrectos.";
+                    errorP.classList.remove('hidden');
+                }
+            })
+            .catch(err => {
+                errorP.textContent = "Error de conexión.";
+                errorP.classList.remove('hidden');
+            });
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('fleetUser');
+            currentUser = null;
+            document.getElementById('appScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+
+        function checkSession() {
+            const savedUser = localStorage.getItem('fleetUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showApp();
+            }
+        }
+
+        function showApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            document.getElementById('userName').textContent = currentUser.nombre;
+            
+            if (currentUser.rol === 'Admin') {
+                document.getElementById('adminVehiculosBtn').classList.remove('hidden');
+            }
+            loadVehiculos();
+        }
+
+        // Navegación entre secciones
+        function showSection(section) {
+            const sections = document.querySelectorAll('.app-section');
+            sections.forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`section-${section}`).classList.remove('hidden');
+        }
+
+        // Cargar Vehículos al Select
+        function loadVehiculos() {
+            const select = document.getElementById('vinSelect');
+            select.innerHTML = '<option value="">Cargando vehículos...</option>';
+
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getVehiculos' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    select.innerHTML = '<option value="">Selecciona un auto...</option>';
+                    data.data.forEach(v => {
+                        let option = document.createElement('option');
+                        option.value = v.VIN;
+                        option.textContent = `${v.VIN} - ${v.Model} (${v.AsignadoA})`;
+                        select.appendChild(option);
+                    });
+                    // Actualizar dashboard
+                    document.getElementById('totalVehiculos').textContent = data.data.length;
+                }
+            });
+        }
+
+        // Enviar Gasto
+        function submitGasto() {
+            const vin = document.getElementById('vinSelect').value;
+            const monto = document.getElementById('montoInput').value;
+            const concepto = document.getElementById('conceptoInput').value;
+            const foto = document.getElementById('fotoInput').files[0];
+
+            if(!vin || !monto || !concepto) {
+                alert("Por favor completa todos los campos.");
+                return;
+            }
+
+            // Por ahora subimos los datos sin la foto para probar la conexión
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'addGasto',
+                    vin: vin,
+                    email: currentUser.email,
+                    monto: monto,
+                    concepto: concepto,
+                    fotoUrl: '' // La foto la manejaremos en el siguiente paso
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert("Gasto guardado correctamente");
+                    document.getElementById('montoInput').value = '';
+                    document.getElementById('conceptoInput').value = '';
+                    document.getElementById('fotoInput').value = '';
+                } else {
+                    alert("Error al guardar el gasto.");
+                }
+            });
+        }
+
+        // Inicializar la app cuando cargue la página
+        window.onload = checkSession;
+    </script>
+</body>
+</html>
