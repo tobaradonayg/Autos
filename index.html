@@ -55,6 +55,10 @@
                 <button @click="showSection('dashboard'); sidebarOpen=false" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
                     <span>Dashboard</span>
                 </button>
+                <!-- NUEVO: Mis Carros -->
+                <button @click="showSection('miscarros'); sidebarOpen=false" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                    <span>Mis Carros</span>
+                </button>
                 <button @click="showSection('cargar'); sidebarOpen=false" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
                     <span>Cargar Gasto</span>
                 </button>
@@ -101,7 +105,6 @@
                             <p class="text-4xl font-bold text-green-600" x-text="'$' + totalGastosHoy">0</p>
                         </div>
                     </div>
-                    
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <h3 class="text-lg font-bold text-gray-800 mb-4">Reportes de Hoy</h3>
                         <div class="overflow-x-auto">
@@ -130,12 +133,34 @@
                     </div>
                 </div>
 
+                <!-- MIS CARROS (NUEVO) -->
+                <div x-show="activeSection === 'miscarros'" style="display: none;">
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Mis Carros Asignados</h1>
+                    <p class="text-gray-500 mb-6">Estos son los vehículos actualmente bajo tu responsabilidad. Haz clic para cargar un gasto rápido.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <template x-for="v in misCarros" :key="v.VIN">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <h3 class="font-bold text-xl text-gray-800" x-text="v.Model"></h3>
+                                <p class="text-sm text-blue-600 font-medium mb-4" x-text="v.VIN"></p>
+                                <div class="text-sm space-y-1 mb-4 text-gray-600">
+                                    <p>Año: <span x-text="v.Year"></span></p>
+                                    <p>Color: <span x-text="v.Color"></span></p>
+                                </div>
+                                <button @click="cargarGastoRapido(v.VIN)" class="w-full bg-blue-50 text-blue-700 py-2 rounded-lg hover:bg-blue-100 font-semibold">Cargar Gasto a este Auto</button>
+                            </div>
+                        </template>
+                        <div x-show="misCarros.length === 0" class="col-span-full bg-white p-6 rounded-xl text-center text-gray-500 border border-gray-100">
+                            No tienes carros asignados a tu nombre en el sistema.
+                        </div>
+                    </div>
+                </div>
+
                 <!-- CARGAR GASTO -->
                 <div x-show="activeSection === 'cargar'" style="display: none;">
                     <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Cargar Nuevo Gasto</h1>
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 max-w-2xl">
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Buscar Vehículo (Escribe VIN o Modelo)</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Buscar Vehículo</label>
                             <input type="text" x-model="vehiculoBuscado" @input="filtrarVehiculos()" placeholder="Ej: Toyota o 1234ABCD" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg mb-2">
                             <select x-model="nuevoGasto.vin" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
                                 <option value="">Selecciona un auto...</option>
@@ -156,10 +181,24 @@
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Foto de Factura (Se comprimirá automáticamente)</label>
                                 <input type="file" @change="handleFileUpload" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
-                                <p x-show="isUploading" class="text-sm text-blue-500 mt-2">Comprimiendo y subiendo imagen...</p>
+                                <!-- NUEVO: Vista previa de la imagen y estado de subida -->
+                                <div class="mt-4">
+                                    <p x-show="isUploading" class="text-sm text-blue-500 flex items-center gap-2">
+                                        <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Comprimiendo imagen...
+                                    </p>
+                                    <img x-show="fotoPreview && !isUploading" :src="fotoPreview" class="mt-2 w-32 h-32 object-cover rounded-lg border border-gray-200">
+                                </div>
                             </div>
                         </div>
-                        <button @click="submitGasto()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-semibold">Guardar Gasto</button>
+                        <!-- NUEVO: Botón desactivado mientras sube imagen -->
+                        <button @click="submitGasto()" :disabled="isUploading" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            <span x-show="!isUploading">Guardar Gasto</span>
+                            <span x-show="isUploading">Espera un momento...</span>
+                        </button>
                     </div>
                 </div>
 
@@ -168,7 +207,7 @@
                     <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Historial de Gastos</h1>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <input type="text" x-model="filtroAuto" placeholder="Buscar por VIN/Modelo/Driver..." class="px-4 py-2 border border-gray-200 rounded-lg">
+                            <input type="text" x-model="filtroAuto" placeholder="Buscar por VIN/Modelo..." class="px-4 py-2 border border-gray-200 rounded-lg">
                             <input type="text" x-model="filtroConcepto" placeholder="Buscar por Concepto..." class="px-4 py-2 border border-gray-200 rounded-lg">
                             <input type="text" x-model="filtroEmpleado" placeholder="Buscar por Empleado..." class="px-4 py-2 border border-gray-200 rounded-lg">
                             <input type="date" x-model="filtroFecha" class="px-4 py-2 border border-gray-200 rounded-lg">
@@ -293,17 +332,42 @@
             <template x-if="selectedGasto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <h3 class="text-3xl font-bold text-gray-800 mb-2" x-text="selectedGasto.Concepto"></h3>
-                        <p class="text-gray-500 mb-4" x-text="new Date(selectedGasto.Fecha).toLocaleString()"></p>
-                        <div class="space-y-3 mb-6 p-4 bg-gray-50 rounded-lg">
-                            <p><span class="font-medium text-gray-700">Vehículo (VIN):</span> <span class="text-blue-600 font-medium" x-text="selectedGasto.VIN"></span></p>
-                            <p><span class="font-medium text-gray-700">Reportado por:</span> <span x-text="getNombreByEmail(selectedGasto.Email)"></span></p>
-                            <p><span class="font-medium text-gray-700">Monto:</span> <span class="font-bold text-green-600 text-xl" x-text="'$' + selectedGasto.Monto"></span></p>
+                        <!-- Modo Vista -->
+                        <div x-show="!isEditing">
+                            <h3 class="text-3xl font-bold text-gray-800 mb-2" x-text="selectedGasto.Concepto"></h3>
+                            <p class="text-gray-500 mb-4" x-text="new Date(selectedGasto.Fecha).toLocaleString()"></p>
+                            <div class="space-y-3 mb-6 p-4 bg-gray-50 rounded-lg">
+                                <p><span class="font-medium text-gray-700">Vehículo (VIN):</span> <span class="text-blue-600 font-medium" x-text="selectedGasto.VIN"></span></p>
+                                <p><span class="font-medium text-gray-700">Reportado por:</span> <span x-text="getNombreByEmail(selectedGasto.Email)"></span></p>
+                                <p><span class="font-medium text-gray-700">Monto:</span> <span class="font-bold text-green-600 text-xl" x-text="'$' + selectedGasto.Monto"></span></p>
+                            </div>
+                        </div>
+                        <!-- Modo Edición -->
+                        <div x-show="isEditing" style="display: none;">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Editar Gasto</h3>
+                            <div class="space-y-4 mb-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Monto ($)</label>
+                                    <input type="number" x-model="editData.monto" class="w-full px-4 py-2 border border-gray-200 rounded-lg">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Concepto</label>
+                                    <input type="text" x-model="editData.concepto" class="w-full px-4 py-2 border border-gray-200 rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de Acción (Permisos) -->
+                        <div class="flex gap-4 mt-6 border-t pt-4">
+                            <button x-show="!isEditing && (currentUser.rol === 'Admin' || selectedGasto.Email === currentUser.email)" @click="startEdit()" class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 font-medium">Editar</button>
+                            <button x-show="!isEditing && (currentUser.rol === 'Admin' || selectedGasto.Email === currentUser.email)" @click="deleteGasto()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium">Eliminar</button>
+                            <button x-show="isEditing" @click="saveEdit()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium">Guardar Cambios</button>
+                            <button x-show="isEditing" @click="isEditing = false" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 font-medium">Cancelar</button>
                         </div>
                     </div>
                     <div>
                         <h4 class="font-bold text-gray-700 mb-3">Factura / Ticket Adjunto:</h4>
-                        <template x-if="selectedGasto.FotoURL">
+                        <template x-if="selectedGasto.FotoURL && !selectedGasto.FotoURL.includes('Error')">
                             <a :href="selectedGasto.FotoURL" target="_blank">
                                 <img :src="selectedGasto.FotoURL" class="w-full h-auto rounded-lg border border-gray-200 shadow-sm">
                             </a>
@@ -311,6 +375,11 @@
                         <template x-if="!selectedGasto.FotoURL">
                             <div class="w-full h-48 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-gray-400">
                                 No se adjuntó foto
+                            </div>
+                        </template>
+                        <template x-if="selectedGasto.FotoURL && selectedGasto.FotoURL.includes('Error')">
+                            <div class="w-full h-48 flex items-center justify-center bg-red-50 rounded-lg border-2 border-dashed border-red-300 text-red-500 p-4 text-center text-sm">
+                                Hubo un error al subir esta foto. Revisa los permisos del script.
                             </div>
                         </template>
                     </div>
@@ -390,10 +459,13 @@
                 vehiculosFiltrados: [],
                 vehiculoBuscado: '',
                 gastos: [],
-                usuarios: [], // NUEVO
+                usuarios: [],
 
                 modalOpen: false,
                 selectedGasto: null,
+                isEditing: false,
+                editData: { id: '', monto: '', concepto: '' },
+                
                 vehiculoModalOpen: false,
                 selectedVehiculo: null,
                 gastosVehiculo: [],
@@ -401,8 +473,8 @@
                 nuevoGasto: { vin: '', monto: '', concepto: '', fotoBase64: null },
                 newVehiculo: { vin: '', year: '', model: '', color: '', title: '', asignadoA: '', note: '' },
                 isUploading: false,
+                fotoPreview: '',
 
-                // Filtros
                 busquedaVehiculo: '',
                 filtroAuto: '', filtroConcepto: '', filtroFecha: '', filtroEmpleado: '',
 
@@ -415,7 +487,6 @@
                 },
 
                 async loadData() {
-                    // Cargar usuarios para mapear correos a nombres
                     const userRes = await this.fetchData('getUsuarios');
                     if (userRes.status === 'success') this.usuarios = userRes.data;
 
@@ -425,10 +496,8 @@
                         this.vehiculosFiltrados = vehRes.data;
                     }
 
-                    if (this.activeSection === 'dashboard' || this.activeSection === 'historial') {
-                        const gasRes = await this.fetchData('getGastos');
-                        if (gasRes.status === 'success') this.gastos = gasRes.data;
-                    }
+                    const gasRes = await this.fetchData('getGastos');
+                    if (gasRes.status === 'success') this.gastos = gasRes.data;
                 },
 
                 async fetchData(action, extraData = {}) {
@@ -463,20 +532,11 @@
 
                 async showSection(section) {
                     this.activeSection = section;
-                    if (section === 'historial' || section === 'dashboard') {
-                        const res = await this.fetchData('getGastos');
-                        if (res.status === 'success') this.gastos = res.data;
-                    }
-                    if (section === 'vehiculos' || section === 'cargar') {
-                        const res = await this.fetchData('getVehiculos');
-                        if (res.status === 'success') {
-                            this.vehiculos = res.data;
-                            this.vehiculosFiltrados = res.data;
-                        }
+                    if (section === 'historial' || section === 'dashboard' || section === 'vehiculos') {
+                        await this.loadData(); // Refresca datos si entran a estas secciones
                     }
                 },
 
-                // Helper para mostrar nombre en vez de correo
                 getNombreByEmail(email) {
                     if(!email) return 'Desconocido';
                     let user = this.usuarios.find(u => u.Email === email);
@@ -500,6 +560,7 @@
                     const file = e.target.files[0];
                     if (!file) return;
                     this.isUploading = true;
+                    this.fotoPreview = '';
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         const img = new Image();
@@ -511,7 +572,9 @@
                             if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
                             canvas.width = width; canvas.height = height;
                             ctx.drawImage(img, 0, 0, width, height);
-                            this.nuevoGasto.fotoBase64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                            this.nuevoGasto.fotoBase64 = dataUrl.split(',')[1];
+                            this.fotoPreview = dataUrl;
                             this.isUploading = false;
                         };
                         img.src = event.target.result;
@@ -535,8 +598,8 @@
                         alert("Gasto guardado correctamente");
                         this.nuevoGasto = { vin: '', monto: '', concepto: '', fotoBase64: null };
                         this.vehiculoBuscado = '';
-                        const gasRes = await this.fetchData('getGastos');
-                        if (gasRes.status === 'success') this.gastos = gasRes.data;
+                        this.fotoPreview = '';
+                        await this.loadData();
                     } else {
                         alert("Error al guardar el gasto.");
                     }
@@ -551,8 +614,7 @@
                     if (res.status === 'success') {
                         alert("Vehículo agregado correctamente");
                         this.newVehiculo = { vin: '', year: '', model: '', color: '', title: '', asignadoA: '', note: '' };
-                        const vehRes = await this.fetchData('getVehiculos');
-                        if (vehRes.status === 'success') this.vehiculos = vehRes.data;
+                        await this.loadData();
                     }
                 },
 
@@ -560,6 +622,7 @@
                     this.selectedGasto = gasto;
                     this.vehiculoModalOpen = false;
                     this.modalOpen = true;
+                    this.isEditing = false;
                 },
 
                 openVehiculoModal(v) {
@@ -568,7 +631,44 @@
                     this.vehiculoModalOpen = true;
                 },
 
-                // Getters para cálculos y filtros
+                cargarGastoRapido(vin) {
+                    this.nuevoGasto.vin = vin;
+                    this.showSection('cargar');
+                },
+
+                startEdit() {
+                    this.editData = {
+                        id: this.selectedGasto.ID,
+                        monto: this.selectedGasto.Monto,
+                        concepto: this.selectedGasto.Concepto
+                    };
+                    this.isEditing = true;
+                },
+
+                async saveEdit() {
+                    const res = await this.fetchData('editGasto', this.editData);
+                    if (res.status === 'success') {
+                        alert("Gasto actualizado");
+                        this.isEditing = false;
+                        this.modalOpen = false;
+                        await this.loadData();
+                    } else {
+                        alert("Error al actualizar");
+                    }
+                },
+
+                async deleteGasto() {
+                    if(!confirm("¿Estás seguro de eliminar este gasto?")) return;
+                    const res = await this.fetchData('deleteGasto', { id: this.selectedGasto.ID });
+                    if (res.status === 'success') {
+                        alert("Gasto eliminado");
+                        this.modalOpen = false;
+                        await this.loadData();
+                    } else {
+                        alert("Error al eliminar");
+                    }
+                },
+
                 get totalGastosHoy() {
                     let today = new Date().toDateString();
                     return this.gastos.filter(g => new Date(g.Fecha).toDateString() === today)
@@ -578,6 +678,11 @@
                 get gastosHoy() {
                     let today = new Date().toDateString();
                     return this.gastos.filter(g => new Date(g.Fecha).toDateString() === today);
+                },
+
+                get misCarros() {
+                    if(!this.currentUser) return [];
+                    return this.vehiculos.filter(v => String(v.AsignadoA).toLowerCase() === this.currentUser.nombre.toLowerCase());
                 },
 
                 get vehiculosFiltradosTabla() {
