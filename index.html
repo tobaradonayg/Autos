@@ -3,115 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Autos</title>
-    <!-- Cargamos Tailwind CSS para el diseño responsivo -->
+    <title>Fleet Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js para el menú hamburguesa y interactividad -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans" x-data="{ sidebarOpen: false }">
 
     <!-- PANTALLA DE LOGIN -->
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-            <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Fleet Control</h1>
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-900 to-gray-700">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">Fleet<span class="text-blue-600">Control</span></h1>
+                <p class="text-gray-500 mt-2">Gestión de Vehículos y Gastos</p>
+            </div>
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="emailInput" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="ejemplo@correo.com">
+                    <input type="email" id="emailInput" class="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="ejemplo@correo.com">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Contraseña / PIN</label>
-                    <input type="password" id="passInput" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="* * * * * *">
+                    <label class="block text-sm font-medium text-gray-700">Contraseña</label>
+                    <input type="password" id="passInput" class="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="* * * * * *">
                 </div>
-                <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">Ingresar</button>
-                <p id="loginError" class="text-red-500 text-sm text-center hidden"></p>
+                <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-semibold transition-colors shadow-md">Ingresar</button>
+                <p id="loginError" class="text-red-500 text-sm text-center hidden bg-red-50 p-2 rounded-lg"></p>
             </div>
         </div>
     </div>
 
-    <!-- PANTALLA DE LA APP (Dashboard) - Oculta al principio -->
-    <div id="appScreen" class="hidden min-h-screen flex flex-col md:flex-row">
+    <!-- PANTALLA DE LA APP -->
+    <div id="appScreen" class="hidden min-h-screen">
         
-        <!-- Barra Lateral (PC) / Menú Superior (Móvil) -->
-        <nav class="bg-gray-800 text-white w-full md:w-64 md:min-h-screen flex md:flex-col justify-between md:justify-start">
-            <div class="p-4 hidden md:block">
-                <h2 class="text-xl font-bold">Fleet Control</h2>
+        <!-- Overlay para cerrar menú en móvil -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden transition-opacity" style="display: none;"></div>
+
+        <!-- Menú Lateral (Hamburguesa en Móvil / Fijo en PC) -->
+        <aside class="fixed top-0 left-0 h-full w-72 bg-white shadow-xl z-40 transition-transform duration-300 ease-in-out" 
+               :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
+            
+            <!-- Perfil de Usuario -->
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl" id="userInitial">U</div>
+                    <div>
+                        <h3 class="font-bold text-gray-800" id="userName">Usuario</h3>
+                        <p class="text-xs text-gray-500" id="userRole">Empleado</p>
+                    </div>
+                </div>
             </div>
-            <div class="flex md:flex-col w-full">
-                <button onclick="showSection('dashboard')" class="w-full text-left p-4 hover:bg-gray-700">Dashboard</button>
-                <button onclick="showSection('cargar')" class="w-full text-left p-4 hover:bg-gray-700">Cargar Gasto</button>
-                <button onclick="showSection('historial')" class="w-full text-left p-4 hover:bg-gray-700">Historial</button>
-                <button id="adminVehiculosBtn" onclick="showSection('vehiculos')" class="hidden w-full text-left p-4 hover:bg-gray-700">Gestionar Autos</button>
+
+            <!-- Navegación -->
+            <nav class="p-4 space-y-1">
+                <button onclick="showSection('dashboard'); sidebarOpen=false" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="showSection('cargar'); sidebarOpen=false" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Cargar Gasto</span>
+                </button>
+                <button onclick="showSection('historial'); sidebarOpen=false" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    <span>Historiales</span>
+                </button>
+                
+                <div id="adminMenuContainer" class="hidden space-y-1 pt-2 mt-2 border-t border-gray-100">
+                    <p class="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Administración</p>
+                    <button onclick="showSection('vehiculos'); sidebarOpen=false" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span>Gestionar Autos</span>
+                    </button>
+                </div>
+            </nav>
+
+            <div class="absolute bottom-0 w-full p-4 border-t border-gray-100">
+                <button onclick="handleLogout()" class="w-full flex items-center justify-center space-x-2 p-3 rounded-lg text-red-500 hover:bg-red-50 font-medium transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span>Cerrar Sesión</span>
+                </button>
             </div>
-            <div class="p-4">
-                <button onclick="handleLogout()" class="text-sm text-red-400 hover:text-red-300">Cerrar Sesión</button>
-            </div>
-        </nav>
+        </aside>
 
         <!-- Contenido Principal -->
-        <main class="flex-1 p-4 md:p-8">
-            
-            <!-- Sección: Dashboard -->
-            <div id="section-dashboard" class="app-section">
-                <h1 class="text-2xl font-bold mb-6">Bienvenido, <span id="userName"></span></h1>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white p-4 rounded shadow">
-                        <h3 class="text-gray-500 text-sm">Total Vehículos</h3>
-                        <p class="text-3xl font-bold" id="totalVehiculos">0</p>
+        <div class="md:ml-72 min-h-screen flex flex-col">
+            <!-- Top Bar (Móvil) -->
+            <header class="bg-white p-4 flex items-center justify-between md:hidden shadow-sm sticky top-0 z-20">
+                <button @click="sidebarOpen = true" class="text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <h2 class="font-bold text-gray-800">Fleet<span class="text-blue-600">Control</span></h2>
+                <div class="w-6"></div>
+            </header>
+
+            <main class="flex-1 p-4 md:p-8">
+                
+                <!-- Sección: Dashboard -->
+                <div id="section-dashboard" class="app-section">
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-gray-500 text-sm font-medium">Total Vehículos</h3>
+                                <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">🚗</div>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800" id="totalVehiculos">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-gray-500 text-sm font-medium">Tus Gastos del Mes</h3>
+                                <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600">💰</div>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800">$0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-gray-500 text-sm font-medium">Reportes Recientes</h3>
+                                <div class="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600">📄</div>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800">0</p>
+                        </div>
                     </div>
-                    <div class="bg-white p-4 rounded shadow">
-                        <h3 class="text-gray-500 text-sm">Tus Gastos del Mes</h3>
-                        <p class="text-3xl font-bold">$0</p>
+                </div>
+
+                <!-- Sección: Cargar Gasto -->
+                <div id="section-cargar" class="app-section hidden">
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Cargar Nuevo Gasto</h1>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 max-w-2xl">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Vehículo</label>
+                                <select id="vinSelect" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Cargando vehículos...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Monto ($)</label>
+                                <input type="number" id="montoInput" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Concepto</label>
+                                <input type="text" id="conceptoInput" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Gasolina, etc.">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Foto de Factura</label>
+                                <input type="file" id="fotoInput" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
+                            </div>
+                        </div>
+                        <button onclick="submitGasto()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-semibold transition-colors shadow-sm">Guardar Gasto</button>
                     </div>
                 </div>
-            </div>
 
-            <!-- Sección: Cargar Gasto -->
-            <div id="section-cargar" class="app-section hidden">
-                <h1 class="text-2xl font-bold mb-6">Cargar Nuevo Gasto</h1>
-                <div class="bg-white p-6 rounded shadow max-w-lg">
-                    <label class="block text-sm font-medium text-gray-700">Seleccionar Vehículo (VIN / Modelo)</label>
-                    <select id="vinSelect" class="mt-1 mb-4 block w-full px-3 py-2 border border-gray-300 rounded-md">
-                        <option value="">Cargando vehículos...</option>
-                    </select>
-
-                    <label class="block text-sm font-medium text-gray-700">Monto ($)</label>
-                    <input type="number" id="montoInput" class="mt-1 mb-4 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="0.00">
-
-                    <label class="block text-sm font-medium text-gray-700">Concepto</label>
-                    <input type="text" id="conceptoInput" class="mt-1 mb-4 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Gasolina, Mantenimiento, etc.">
-
-                    <label class="block text-sm font-medium text-gray-700">Foto de Factura / Ticket</label>
-                    <input type="file" id="fotoInput" accept="image/*" class="mt-1 mb-4 block w-full text-sm text-gray-500 border border-gray-300 rounded-md p-2">
-
-                    <button onclick="submitGasto()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Guardar Gasto</button>
+                <!-- Sección: Historial -->
+                <div id="section-historial" class="app-section hidden">
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Historial de Gastos</h1>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <p class="text-gray-500 text-center py-8">Aquí cargará la tabla completa de gastos con filtros.</p>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Sección: Historial -->
-            <div id="section-historial" class="app-section hidden">
-                <h1 class="text-2xl font-bold mb-6">Historial de Gastos</h1>
-                <div class="bg-white p-4 rounded shadow">
-                    <p>Aquí pondremos la tabla con los filtros.</p>
+                <!-- Sección: Gestionar Vehículos (Solo Admin) -->
+                <div id="section-vehiculos" class="app-section hidden">
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Gestión de Vehículos</h1>
+                    
+                    <!-- Formulario Agregar Auto -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 max-w-2xl mb-8">
+                        <h2 class="text-xl font-bold mb-4 text-gray-700">Agregar Nuevo Vehículo</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">VIN / Patente</label>
+                                <input type="text" id="newVin" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Año (Year)</label>
+                                <input type="number" id="newYear" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Modelo</label>
+                                <input type="text" id="newModel" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                                <input type="text" id="newColor" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                <input type="text" id="newTitle" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Asignado a (Driver o "Extra")</label>
+                                <input type="text" id="newAsignadoA" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ej: Juan Pérez o Extra - Sede">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nota</label>
+                                <textarea id="newNote" rows="2" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                        </div>
+                        <button onclick="addVehiculo()" class="bg-green-600 text-white px-6 py-2.5 rounded-lg hover:bg-green-700 font-semibold transition-colors shadow-sm">Agregar Vehículo</button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Sección: Gestionar Vehículos (Solo Admin) -->
-            <div id="section-vehiculos" class="app-section hidden">
-                <h1 class="text-2xl font-bold mb-6">Gestión de Vehículos</h1>
-                <div class="bg-white p-4 rounded shadow">
-                    <p>Aquí los administradores podrán agregar, editar o eliminar autos.</p>
-                </div>
-            </div>
-
-        </main>
+            </main>
+        </div>
     </div>
 
-    <!-- AQUÍ VA TODO NUESTRO JAVASCRIPT -->
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwZET1YuwcuGQdVjJzLDKCbUbajXePy9feQo4k3CPEDqQXqogqDbTPeGGd1yDh5ZxDhdQ/exec'; // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwZET1YuwcuGQdVjJzLDKCbUbajXePy9feQo4k3CPEDqQXqogqDbTPeGGd1yDh5ZxDhdQ/exec'; // ¡NO OLVIDES PONER TU URL AQUÍ!
         let currentUser = null;
 
-        // Manejo de Sesión
         function handleLogin() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passInput').value;
@@ -133,7 +232,7 @@
                 }
             })
             .catch(err => {
-                errorP.textContent = "Error de conexión.";
+                errorP.textContent = "Error de conexión. Revisa tu URL de Apps Script.";
                 errorP.classList.remove('hidden');
             });
         }
@@ -156,22 +255,30 @@
         function showApp() {
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
-            document.getElementById('userName').textContent = currentUser.nombre;
             
+            // Llenar perfil
+            document.getElementById('userName').textContent = currentUser.nombre;
+            document.getElementById('userInitial').textContent = currentUser.nombre.charAt(0).toUpperCase();
+            
+            let roleBadge = currentUser.rol === 'Admin' 
+                ? '<span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">Admin</span>' 
+                : '<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-bold">Empleado</span>';
+            document.getElementById('userRole').innerHTML = roleBadge;
+
             if (currentUser.rol === 'Admin') {
-                document.getElementById('adminVehiculosBtn').classList.remove('hidden');
+                document.getElementById('adminMenuContainer').classList.remove('hidden');
             }
             loadVehiculos();
         }
 
-        // Navegación entre secciones
         function showSection(section) {
             const sections = document.querySelectorAll('.app-section');
             sections.forEach(sec => sec.classList.add('hidden'));
             document.getElementById(`section-${section}`).classList.remove('hidden');
+            
+            if(section === 'vehiculos') loadVehiculos();
         }
 
-        // Cargar Vehículos al Select
         function loadVehiculos() {
             const select = document.getElementById('vinSelect');
             select.innerHTML = '<option value="">Cargando vehículos...</option>';
@@ -190,25 +297,55 @@
                         option.textContent = `${v.VIN} - ${v.Model} (${v.AsignadoA})`;
                         select.appendChild(option);
                     });
-                    // Actualizar dashboard
                     document.getElementById('totalVehiculos').textContent = data.data.length;
                 }
             });
         }
 
-        // Enviar Gasto
+        function addVehiculo() {
+            const vin = document.getElementById('newVin').value;
+            const year = document.getElementById('newYear').value;
+            const model = document.getElementById('newModel').value;
+            const color = document.getElementById('newColor').value;
+            const title = document.getElementById('newTitle').value;
+            const asignadoA = document.getElementById('newAsignadoA').value;
+            const note = document.getElementById('newNote').value;
+
+            if(!vin || !model) {
+                alert("El VIN y el Modelo son obligatorios.");
+                return;
+            }
+
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'addVehiculo',
+                    vin: vin, year: year, model: model, color: color, 
+                    title: title, asignadoA: asignadoA, note: note
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert("Vehículo agregado exitosamente");
+                    document.querySelectorAll('#section-vehiculos input, #section-vehiculos textarea').forEach(el => el.value = '');
+                    loadVehiculos(); // Refrescar lista
+                } else {
+                    alert("Error al agregar vehículo.");
+                }
+            });
+        }
+
         function submitGasto() {
             const vin = document.getElementById('vinSelect').value;
             const monto = document.getElementById('montoInput').value;
             const concepto = document.getElementById('conceptoInput').value;
-            const foto = document.getElementById('fotoInput').files[0];
 
             if(!vin || !monto || !concepto) {
                 alert("Por favor completa todos los campos.");
                 return;
             }
 
-            // Por ahora subimos los datos sin la foto para probar la conexión
             fetch(API_URL, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -217,7 +354,7 @@
                     email: currentUser.email,
                     monto: monto,
                     concepto: concepto,
-                    fotoUrl: '' // La foto la manejaremos en el siguiente paso
+                    fotoUrl: ''
                 })
             })
             .then(res => res.json())
@@ -233,7 +370,6 @@
             });
         }
 
-        // Inicializar la app cuando cargue la página
         window.onload = checkSession;
     </script>
 </body>
