@@ -89,8 +89,9 @@
 
         <div class="md:ml-72 min-h-screen flex flex-col">
             <header class="bg-white p-4 flex items-center justify-between md:hidden shadow-sm sticky top-0 z-20">
+                <!-- CORRECCIÓN: El SVG del icono de hamburguesa tenía un error de tipeo -->
                 <button @click="sidebarOpen = true" class="text-gray-600">
-                    <svg class="w-6 h-6" fill="none, stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
                 <h2 class="font-bold text-gray-800">Fleet<span class="text-blue-600">Control</span></h2>
                 <div class="w-6"></div>
@@ -144,13 +145,12 @@
                     </div>
                 </div>
 
-                <!-- MIS CARROS (Cards Clickeables) -->
+                <!-- MIS CARROS -->
                 <div x-show="activeSection === 'miscarros'" style="display: none;">
                     <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Mis Carros</h1>
                     <p class="text-gray-500 mb-6">Vehículos asignados a ti o marcados como favoritos.</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <template x-for="v in misCarros" :key="v.VIN">
-                            <!-- Se añadió cursor-pointer y @click a la tarjeta -->
                             <div @click="openVehiculoModal(v)" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative hover:shadow-md transition-shadow cursor-pointer">
                                 <button @click.stop="toggleFavorite(v.VIN)" class="absolute top-4 right-4 text-2xl" :class="isFavorite(v.VIN) ? 'text-yellow-400' : 'text-gray-300 hover:text-gray-400'">★</button>
                                 <h3 class="font-bold text-xl text-gray-800" x-text="v.Model"></h3>
@@ -176,10 +176,11 @@
                     <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Historial de Gastos</h1>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <input type="text" x-model="filtroAuto" @input="currentPage = 1" placeholder="Buscar por VIN/Modelo..." class="px-4 py-2 border border-gray-200 rounded-lg">
-                            <input type="text" x-model="filtroConcepto" @input="currentPage = 1" placeholder="Buscar por Concepto..." class="px-4 py-2 border border-gray-200 rounded-lg">
-                            <input type="text" x-show="currentUser?.rol === 'Admin'" x-model="filtroEmpleado" @input="currentPage = 1" placeholder="Buscar por Empleado..." class="px-4 py-2 border border-gray-200 rounded-lg">
-                            <input type="date" x-model="filtroFecha" @change="currentPage = 1" class="px-4 py-2 border border-gray-200 rounded-lg">
+                            <input type="text" x-model="filtroAuto" @input="currentPage = 1" placeholder="Buscar por VIN/Modelo..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
+                            <input type="text" x-model="filtroConcepto" @input="currentPage = 1" placeholder="Buscar por Concepto..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
+                            <input type="text" x-show="currentUser?.rol === 'Admin'" x-model="filtroEmpleado" @input="currentPage = 1" placeholder="Buscar por Empleado..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
+                            <!-- CORRECCIÓN: Estilos para input de fecha en móvil -->
+                            <input type="date" x-model="filtroFecha" @change="currentPage = 1" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-700">
                         </div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -234,8 +235,9 @@
 
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <input type="text" x-show="currentUser?.rol === 'Admin'" x-model="filtroEmpleadoVeh" @input="currentPageVehiculo = 1" placeholder="Filtrar por Empleado..." class="px-4 py-2 border border-gray-200 rounded-lg">
-                            <input type="date" x-model="filtroFechaVeh" @change="currentPageVehiculo = 1" class="px-4 py-2 border border-gray-200 rounded-lg md:col-span-2">
+                            <input type="text" x-show="currentUser?.rol === 'Admin'" x-model="filtroEmpleadoVeh" @input="currentPageVehiculo = 1" placeholder="Filtrar por Empleado..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
+                            <!-- CORRECCIÓN: Estilos para input de fecha en móvil -->
+                            <input type="date" x-model="filtroFechaVeh" @change="currentPageVehiculo = 1" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-700 md:col-span-2">
                         </div>
                     </div>
 
@@ -328,7 +330,7 @@
         </button>
     </div>
 
-    <!-- MODAL DE CONFIRMACIÓN (Nuevo) -->
+    <!-- MODAL DE CONFIRMACIÓN -->
     <div x-show="confirmModal.show" class="fixed inset-0 z-[90] bg-black bg-opacity-50 flex items-center justify-center p-4" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
             <div class="p-6">
@@ -378,7 +380,7 @@
                         No se encontraron vehículos. Intenta con otro nombre o VIN.
                     </div>
 
-                    <!-- SELECT DE FAVORITOS (Corregido con x-model) -->
+                    <!-- SELECT DE FAVORITOS -->
                     <div x-show="vehiculosFavoritos.length > 0" class="mt-4">
                         <label class="block text-xs font-medium text-gray-500 mb-1">O selecciona rápido de tus Favoritos (★)</label>
                         <select x-model="favSelectValue" @change="selectFavVehiculo(favSelectValue)" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
@@ -549,7 +551,7 @@
                 itemsPerPage: 50, currentPage: 1, currentPageVehiculo: 1,
                 toast: { show: false, type: 'success', title: '', message: '' },
                 syncInterval: null, lastSync: 0, 
-                confirmModal: { show: false, title: '', message: '', action: null }, // Nuevo estado para el modal de confirmación
+                confirmModal: { show: false, title: '', message: '', action: null }, 
 
                 init() {
                     const savedUser = localStorage.getItem('fleetUser');
@@ -734,7 +736,6 @@
                     if (res.status === 'success') { this.showToast('Éxito', 'Gasto actualizado'); this.isEditing = false; this.modalOpen = false; this.lastSync = 0; await this.loadData(); }
                 },
 
-                // NUEVAS FUNCIONES PARA EL MODAL DE CONFIRMACIÓN
                 requestDelete(type) {
                     if (type === 'gasto') {
                         this.confirmModal = {
