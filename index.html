@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fleet Control - HWC</title>
+    <title>Autos HWC - Registro de Gastos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Librerías para Reportes (Charts, Excel, PDF) -->
@@ -36,7 +36,8 @@
     <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-900 to-gray-700" x-show="!currentUser">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">Fleet<span class="text-blue-600">Control</span></h1>
+                <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">Autos<span class="text-blue-600"> HWC</span></h1>
+                <p class="text-gray-500 text-sm mt-2">Registro de gastos mecánicos de autos de la empresa HWC LLC</p>
             </div>
             <div class="space-y-4">
                 <div>
@@ -83,7 +84,7 @@
                 <div x-show="currentUser?.rol === 'Admin'" class="space-y-1 pt-2 mt-2 border-t border-gray-100" style="display: none;">
                     <button @click="showSection('reportes'); sidebarOpen=false" :class="activeSection === 'reportes' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-left p-3 rounded-lg font-medium transition-colors flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        Reportes HWC
+                        Reportes Autos HWC
                     </button>
                     <button @click="showSection('addVehiculo'); sidebarOpen=false" :class="activeSection === 'addVehiculo' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-left p-3 rounded-lg font-medium transition-colors">Agregar Auto</button>
                 </div>
@@ -102,7 +103,7 @@
                 <button @click="sidebarOpen = true" class="text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
-                <h2 class="font-bold text-gray-800">Fleet<span class="text-blue-600">Control</span></h2>
+                <h2 class="font-bold text-gray-800">Autos<span class="text-blue-600"> HWC</span></h2>
                 <div class="w-6"></div>
             </header>
 
@@ -182,7 +183,13 @@
 
                 <!-- HISTORIAL GENERAL -->
                 <div x-show="activeSection === 'historial'" style="display: none;">
-                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Historial de Gastos</h1>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Historial de Gastos</h1>
+                        <button @click="resetFiltros('historial')" class="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 font-medium bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Limpiar Filtros
+                        </button>
+                    </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
@@ -251,6 +258,10 @@
                             <h1 class="text-2xl md:text-3xl font-bold text-gray-800" x-text="selectedVehiculo?.Model"></h1>
                             <p class="text-gray-500" x-text="'VIN: ' + selectedVehiculo?.VIN"></p>
                         </div>
+                        <button @click="resetFiltros('vehiculo')" class="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 font-medium bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Limpiar Filtros
+                        </button>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -348,8 +359,8 @@
                 <div x-show="activeSection === 'reportes'" style="display: none;" x-init="$watch('activeSection', (value) => { if(value === 'reportes') generarReportes() })">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         <div>
-                            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Reportes HWC</h1>
-                            <p class="text-gray-500">Análisis detallado de gastos por intervalos, vehículos o personas.</p>
+                            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Reportes Autos HWC</h1>
+                            <p class="text-gray-500">Registro de gastos mecánicos - HWC LLC</p>
                         </div>
                         <div class="flex gap-2">
                             <button @click="exportarExcel()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium flex items-center gap-2 text-sm">
@@ -363,7 +374,7 @@
                         </div>
                     </div>
 
-                    <!-- Filtros Reportes (Mejorados con Buscadores) -->
+                    <!-- Filtros Reportes -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
                             <div>
@@ -375,7 +386,6 @@
                                 </select>
                             </div>
                             
-                            <!-- Buscador de Vehículo para Reportes -->
                             <div x-show="repTipo === 'vehiculo'">
                                 <label class="block text-xs text-gray-500 mb-1">Buscar Vehículo</label>
                                 <input type="text" x-model="repVehiculoBuscado" @input="filtrarRepVehiculos()" placeholder="Ej: Toyota o 1234ABCD" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg mb-1">
@@ -393,7 +403,6 @@
                                 </div>
                             </div>
 
-                            <!-- Buscador de Empleado para Reportes -->
                             <div x-show="repTipo === 'empleado'">
                                 <label class="block text-xs text-gray-500 mb-1">Buscar Empleado</label>
                                 <input type="text" x-model="repEmpleadoBuscado" @input="filtrarRepEmpleados()" placeholder="Ej: Juan o juan@correo.com" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg mb-1">
@@ -419,6 +428,13 @@
                                 <label class="block text-xs text-gray-500 mb-1">Hasta (Opcional)</label>
                                 <input type="date" x-model="repFechaFin" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
                             </div>
+                        </div>
+                        <!-- Botón Limpiar Filtros para Reportes -->
+                        <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end">
+                            <button @click="resetFiltros('reportes')" class="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 font-medium bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                Limpiar Filtros
+                            </button>
                         </div>
                     </div>
 
@@ -454,11 +470,11 @@
                         </div>
                     </div>
 
-                    <!-- Tabla Detallada de Gastos Filtrada -->
+                    <!-- Tabla Detallada Paginada -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div class="p-4 border-b flex justify-between items-center">
                             <h3 class="text-lg font-bold text-gray-800">Detalle de Gastos</h3>
-                            <span class="text-sm text-gray-500" x-text="repGastosFiltrados.length + ' registros'"></span>
+                            <span class="text-sm text-gray-500" x-text="repGastosFiltrados.length + ' registros encontrados'"></span>
                         </div>
                         <div class="overflow-x-auto" style="max-height: 500px;">
                             <table class="min-w-full divide-y divide-gray-200">
@@ -472,7 +488,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <template x-for="g in repGastosFiltrados" :key="g.ID">
+                                    <template x-for="g in repPaginatedGastos" :key="g.ID">
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="new Date(g.Fecha).toLocaleDateString()"></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="g.VIN"></td>
@@ -484,6 +500,15 @@
                                     <tr x-show="repGastosFiltrados.length === 0"><td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay registros para este filtro.</td></tr>
                                 </tbody>
                             </table>
+                        </div>
+                        <!-- Paginación Tabla Reporte -->
+                        <div class="p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <p class="text-sm text-gray-500">Mostrando <span x-text="repPaginatedGastos.length"></span> de <span x-text="repGastosFiltrados.length"></span> registros</p>
+                            <div class="flex gap-2">
+                                <button @click="prevPageRep()" :disabled="repCurrentPage === 1" class="px-4 py-2 bg-gray-100 rounded-lg disabled:opacity-50 hover:bg-gray-200">Anterior</button>
+                                <span class="px-4 py-2 text-gray-700">Página <span x-text="repCurrentPage"></span> de <span x-text="repTotalPages || 1"></span></span>
+                                <button @click="nextPageRep()" :disabled="repCurrentPage === repTotalPages || repTotalPages === 0" class="px-4 py-2 bg-gray-100 rounded-lg disabled:opacity-50 hover:bg-gray-200">Siguiente</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -539,15 +564,6 @@
                     </div>
                     <div x-show="vehiculoBuscadoFAB && vehiculosFiltradosFAB.length === 0" class="p-3 bg-gray-50 rounded-lg text-center text-gray-400 text-sm border border-dashed border-gray-300 mb-4">
                         No se encontraron vehículos. Intenta con otro nombre o VIN.
-                    </div>
-                    <div x-show="vehiculosFavoritos.length > 0" class="mt-4">
-                        <label class="block text-xs font-medium text-gray-500 mb-1">O selecciona rápido de tus Favoritos (★)</label>
-                        <select @change="selectFavVehiculo($event.target.value); $event.target.value=''" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
-                            <option value="" selected disabled>-- Mis carros favoritos --</option>
-                            <template x-for="v in vehiculosFavoritos" :key="v.VIN">
-                                <option :value="v.VIN" x-text="`${v.VIN} - ${v.Model}`"></option>
-                            </template>
-                        </select>
                     </div>
                 </div>
                 <div x-show="nuevoGasto.vin !== ''" class="p-4 bg-blue-50 rounded-lg flex justify-between items-center">
@@ -712,6 +728,7 @@
                 repEmpleadoBuscado: '', repEmpleadosFiltrados: [], repEmpleadoSel: '',
                 repFechaInicio: '', repFechaFin: '',
                 repResumen: { total: 0, count: 0 },
+                repCurrentPage: 1, repItemsPerPage: 50,
                 chartVehiculos: null, chartEmpleados: null,
 
                 init() {
@@ -834,12 +851,6 @@
                     this.nuevoGasto.vin = v.VIN;
                     this.vehiculoBuscadoFAB = `${v.Model} (${v.VIN})`;
                     this.vehiculosFiltradosFAB = []; 
-                },
-
-                selectFavVehiculo(vin) {
-                    if(!vin) return;
-                    const v = this.vehiculos.find(x => x.VIN === vin);
-                    if(v) this.selectVehiculoFAB(v);
                 },
 
                 handleFileUpload(e) {
@@ -999,12 +1010,31 @@
                 prevPageVehiculo() { if(this.currentPageVehiculo > 1) this.currentPageVehiculo--; },
 
                 // =====================================================================
+                // FUNCIÓN PARA LIMPIAR FILTROS
+                // =====================================================================
+                resetFiltros(tipo) {
+                    if(tipo === 'historial') {
+                        this.filtroAuto = ''; this.filtroConcepto = ''; this.filtroEmpleado = ''; this.filtroFecha = '';
+                        this.currentPage = 1;
+                    } else if(tipo === 'vehiculo') {
+                        this.filtroEmpleadoVeh = ''; this.filtroFechaVeh = '';
+                        this.currentPageVehiculo = 1;
+                    } else if(tipo === 'reportes') {
+                        this.repTipo = 'general';
+                        this.repVehiculoBuscado = ''; this.repVehiculosFiltrados = []; this.repVehiculoSel = '';
+                        this.repEmpleadoBuscado = ''; this.repEmpleadosFiltrados = []; this.repEmpleadoSel = '';
+                        this.repFechaInicio = ''; this.repFechaFin = '';
+                        this.repCurrentPage = 1;
+                        this.generarReportes();
+                    }
+                },
+
+                // =====================================================================
                 // LÓGICA DE REPORTES HWC
                 // =====================================================================
                 
-                // Buscadores de reportes
                 filtrarRepVehiculos() {
-                    this.repVehiculoSel = ''; // Limpiar selección al escribir
+                    this.repVehiculoSel = ''; 
                     if(!this.repVehiculoBuscado) { this.repVehiculosFiltrados = []; return; }
                     let term = this.repVehiculoBuscado.toLowerCase();
                     this.repVehiculosFiltrados = this.vehiculos.filter(v => 
@@ -1021,7 +1051,7 @@
                     this.generarReportes();
                 },
                 filtrarRepEmpleados() {
-                    this.repEmpleadoSel = ''; // Limpiar selección al escribir
+                    this.repEmpleadoSel = ''; 
                     if(!this.repEmpleadoBuscado) { this.repEmpleadosFiltrados = []; return; }
                     let term = this.repEmpleadoBuscado.toLowerCase();
                     this.repEmpleadosFiltrados = this.usuarios.filter(u => 
@@ -1040,7 +1070,6 @@
                 get repGastosFiltrados() {
                     let filtered = this.gastos;
                     
-                    // CORRECCIÓN DE FECHAS: Usar strings para evitar problemas de zona horaria
                     if(this.repFechaInicio) {
                         filtered = filtered.filter(g => String(g.Fecha).split('T')[0] >= this.repFechaInicio);
                     }
@@ -1048,7 +1077,6 @@
                         filtered = filtered.filter(g => String(g.Fecha).split('T')[0] <= this.repFechaFin);
                     }
 
-                    // Filtro por tipo
                     if(this.repTipo === 'vehiculo' && this.repVehiculoSel) {
                         filtered = filtered.filter(g => g.VIN === this.repVehiculoSel);
                     } else if(this.repTipo === 'empleado' && this.repEmpleadoSel) {
@@ -1058,7 +1086,17 @@
                     return filtered;
                 },
 
+                get repTotalPages() { return Math.ceil(this.repGastosFiltrados.length / this.repItemsPerPage); },
+                get repPaginatedGastos() {
+                    let start = (this.repCurrentPage - 1) * this.repItemsPerPage;
+                    let end = start + this.repItemsPerPage;
+                    return this.repGastosFiltrados.slice(start, end);
+                },
+                nextPageRep() { if(this.repCurrentPage < this.repTotalPages) this.repCurrentPage++; },
+                prevPageRep() { if(this.repCurrentPage > 1) this.repCurrentPage--; },
+
                 generarReportes() {
+                    this.repCurrentPage = 1; 
                     let filtered = this.repGastosFiltrados;
                     let total = filtered.reduce((sum, g) => sum + parseFloat(g.Monto), 0);
                     this.repResumen = { total: total, count: filtered.length };
@@ -1157,7 +1195,7 @@
                     let wsTopEmp = XLSX.utils.json_to_sheet(dataTopEmp);
                     XLSX.utils.book_append_sheet(wb, wsTopEmp, "Top Empleados");
 
-                    XLSX.writeFile(wb, "Reporte_HWC.xlsx");
+                    XLSX.writeFile(wb, "Reporte_Autos_HWC.xlsx");
                     this.showToast('Éxito', 'Excel generado correctamente');
                 },
 
@@ -1167,7 +1205,7 @@
                     let filtered = this.repGastosFiltrados;
                     
                     doc.setFontSize(20);
-                    doc.text("Reporte HWC - Fleet Control", 14, 20);
+                    doc.text("Autos HWC - Registro de Gastos", 14, 20);
                     doc.setFontSize(10);
                     doc.setTextColor(100);
                     
@@ -1238,7 +1276,7 @@
                         styles: { fontSize: 8 }
                     });
 
-                    doc.save("Reporte_HWC.pdf");
+                    doc.save("Reporte_Autos_HWC.pdf");
                     this.showToast('Éxito', 'PDF generado correctamente');
                 }
             }
