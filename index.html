@@ -12,10 +12,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
-<!-- CORRECCIÓN: Agregado sidebarOpen al bloqueo de scroll -->
 <body class="bg-gray-100 font-sans" x-data="fleetApp()" :class="{'overflow-hidden': gastoModalOpen || modalOpen || vehiculoModalOpen || confirmModal.show || sidebarOpen}">
 
-    <!-- NOTIFICACIONES (TOASTS) - Centradas abajo -->
+    <!-- NOTIFICACIONES (TOASTS) -->
     <div x-show="toast.show" x-transition class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] max-w-sm w-[90%] bg-white rounded-xl shadow-2xl border-l-4 overflow-hidden" :class="toast.type === 'success' ? 'border-green-500' : 'border-red-500'" style="display: none;">
         <div class="p-4 flex items-center">
             <div class="mr-3">
@@ -81,7 +80,6 @@
                 <button @click="showSection('historial'); sidebarOpen=false" :class="activeSection === 'historial' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-left p-3 rounded-lg font-medium transition-colors">Historial de Gastos</button>
                 <button @click="showSection('vehiculos'); sidebarOpen=false" :class="activeSection === 'vehiculos' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-left p-3 rounded-lg font-medium transition-colors">Vehículos</button>
                 
-                <!-- NUEVA SECCIÓN REPORTES HWC -->
                 <div x-show="currentUser?.rol === 'Admin'" class="space-y-1 pt-2 mt-2 border-t border-gray-100" style="display: none;">
                     <button @click="showSection('reportes'); sidebarOpen=false" :class="activeSection === 'reportes' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-left p-3 rounded-lg font-medium transition-colors flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -346,12 +344,12 @@
                     </div>
                 </div>
 
-                <!-- NUEVA SECCIÓN: REPORTES HWC -->
+                <!-- SECCIÓN: REPORTES HWC (Mejorada) -->
                 <div x-show="activeSection === 'reportes'" style="display: none;" x-init="$watch('activeSection', (value) => { if(value === 'reportes') generarReportes() })">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         <div>
                             <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Reportes HWC</h1>
-                            <p class="text-gray-500">Análisis financiero y operativo de la flota.</p>
+                            <p class="text-gray-500">Análisis detallado de gastos por intervalos, vehículos o personas.</p>
                         </div>
                         <div class="flex gap-2">
                             <button @click="exportarExcel()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium flex items-center gap-2 text-sm">
@@ -367,74 +365,104 @@
 
                     <!-- Filtros Reportes -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Tipo de Reporte</label>
+                                <select x-model="repTipo" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
+                                    <option value="general">General (Todo)</option>
+                                    <option value="vehiculo">Por Vehículo</option>
+                                    <option value="empleado">Por Empleado</option>
+                                </select>
+                            </div>
+                            <div x-show="repTipo === 'vehiculo'">
+                                <label class="block text-xs text-gray-500 mb-1">Seleccionar Vehículo</label>
+                                <select x-model="repVehiculoSel" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
+                                    <option value="">Todos los vehículos</option>
+                                    <template x-for="v in vehiculos" :key="v.VIN">
+                                        <option :value="v.VIN" x-text="`${v.VIN} - ${v.Model}`"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div x-show="repTipo === 'empleado'">
+                                <label class="block text-xs text-gray-500 mb-1">Seleccionar Empleado</label>
+                                <select x-model="repEmpleadoSel" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
+                                    <option value="">Todos los empleados</option>
+                                    <template x-for="u in usuarios" :key="u.Email">
+                                        <option :value="u.Email" x-text="u.Nombre"></option>
+                                    </template>
+                                </select>
+                            </div>
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Desde (Opcional)</label>
-                                <input type="date" x-model="repFechaInicio" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
+                                <input type="date" x-model="repFechaInicio" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
                             </div>
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Hasta (Opcional)</label>
-                                <input type="date" x-model="repFechaFin" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
+                                <input type="date" x-model="repFechaFin" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
                             </div>
-                            <button @click="generarReportes()" class="bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700">Generar Reporte</button>
                         </div>
-                        <p class="text-xs text-gray-400 mt-2">Si no seleccionas fechas, se analizará toda la historia.</p>
                     </div>
 
                     <!-- Resumen -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 class="text-gray-500 text-sm font-medium mb-2">Total Gastado</h3>
+                            <h3 class="text-gray-500 text-sm font-medium mb-2">Total Gastado (Filtrado)</h3>
                             <p class="text-3xl font-bold text-red-600" x-text="'$' + repResumen.total.toFixed(2)">0.00</p>
                         </div>
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 class="text-gray-500 text-sm font-medium mb-2">Vehículos con Gastos</h3>
-                            <p class="text-3xl font-bold text-blue-600" x-text="repResumen.vehiculos">0</p>
+                            <h3 class="text-gray-500 text-sm font-medium mb-2">N° de Registros</h3>
+                            <p class="text-3xl font-bold text-blue-600" x-text="repResumen.count">0</p>
                         </div>
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 class="text-gray-500 text-sm font-medium mb-2">Empleados que Registraron</h3>
-                            <p class="text-3xl font-bold text-green-600" x-text="repResumen.empleados">0</p>
+                            <h3 class="text-gray-500 text-sm font-medium mb-2">Promedio por Gasto</h3>
+                            <p class="text-3xl font-bold text-green-600" x-text="'$' + (repResumen.count > 0 ? (repResumen.total / repResumen.count).toFixed(2) : '0.00')">0.00</p>
                         </div>
                     </div>
 
-                    <!-- Gráficos -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Gráficos (Solo si es General) -->
+                    <div x-show="repTipo === 'general'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 class="text-lg font-bold text-gray-800 mb-4">Autos que más gastaron</h3>
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">Top 5: Autos que más gastaron</h3>
                             <div class="relative h-64">
                                 <canvas id="chartVehiculos"></canvas>
                             </div>
                         </div>
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 class="text-lg font-bold text-gray-800 mb-4">Empleados que más registraron</h3>
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">Top 5: Empleados que más registran</h3>
                             <div class="relative h-64">
                                 <canvas id="chartEmpleados"></canvas>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tabla Detallada -->
+                    <!-- Tabla Detallada de Gastos Filtrada -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div class="p-4 border-b">
-                            <h3 class="text-lg font-bold text-gray-800">Detalle por Vehículo</h3>
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-bold text-gray-800">Detalle de Gastos</h3>
+                            <span class="text-sm text-gray-500" x-text="repGastosFiltrados.length + ' registros'"></span>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto" style="max-height: 500px;">
                             <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                                <thead class="bg-gray-50 sticky top-0">
                                     <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehículo</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Gastado</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">N° de Gastos</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Empleado</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Concepto</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <template x-for="v in repTablaVehiculos" :key="v.vin">
+                                    <template x-for="g in repGastosFiltrados" :key="g.ID">
                                         <tr>
-                                            <td class="px-6 py-4 text-sm font-medium text-gray-900" x-text="v.vin"></td>
-                                            <td class="px-6 py-4 text-sm font-bold text-red-600" x-text="'$' + v.total.toFixed(2)"></td>
-                                            <td class="px-6 py-4 text-sm text-gray-500" x-text="v.count"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="new Date(g.Fecha).toLocaleDateString()"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="g.VIN"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="getNombreByEmail(g.Email)"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="g.Concepto"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900" x-text="'$' + g.Monto"></td>
                                         </tr>
                                     </template>
+                                    <tr x-show="repGastosFiltrados.length === 0"><td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay registros para este filtro.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -661,9 +689,9 @@
                 syncInterval: null, lastSync: 0, 
                 confirmModal: { show: false, title: '', message: '', action: null }, 
                 // Variables para Reportes
+                repTipo: 'general', repVehiculoSel: '', repEmpleadoSel: '',
                 repFechaInicio: '', repFechaFin: '',
-                repResumen: { total: 0, vehiculos: 0, empleados: 0 },
-                repTablaVehiculos: [], repTablaEmpleados: [],
+                repResumen: { total: 0, count: 0 },
                 chartVehiculos: null, chartEmpleados: null,
 
                 init() {
@@ -953,62 +981,60 @@
                 // =====================================================================
                 // LÓGICA DE REPORTES HWC
                 // =====================================================================
-                generarReportes() {
+                get repGastosFiltrados() {
                     let filtered = this.gastos;
                     
                     // Filtro por fecha
                     if(this.repFechaInicio) {
                         let startDate = new Date(this.repFechaInicio);
+                        startDate.setHours(0, 0, 0, 0);
                         filtered = filtered.filter(g => new Date(g.Fecha) >= startDate);
                     }
                     if(this.repFechaFin) {
                         let endDate = new Date(this.repFechaFin);
-                        endDate.setHours(23, 59, 59); // Incluir todo el día final
+                        endDate.setHours(23, 59, 59, 999);
                         filtered = filtered.filter(g => new Date(g.Fecha) <= endDate);
                     }
 
-                    // Calcular resumen
-                    let total = filtered.reduce((sum, g) => sum + parseFloat(g.Monto), 0);
-                    let uniqueVehiculos = new Set(filtered.map(g => g.VIN)).size;
-                    let uniqueEmpleados = new Set(filtered.map(g => g.Email)).size;
-                    this.repResumen = { total: total, vehiculos: uniqueVehiculos, empleados: uniqueEmpleados };
+                    // Filtro por tipo
+                    if(this.repTipo === 'vehiculo' && this.repVehiculoSel) {
+                        filtered = filtered.filter(g => g.VIN === this.repVehiculoSel);
+                    } else if(this.repTipo === 'empleado' && this.repEmpleadoSel) {
+                        filtered = filtered.filter(g => g.Email === this.repEmpleadoSel);
+                    }
 
-                    // Agrupar por Vehículo
-                    let groupedVehiculos = {};
-                    filtered.forEach(g => {
-                        if(!groupedVehiculos[g.VIN]) groupedVehiculos[g.VIN] = { total: 0, count: 0 };
-                        groupedVehiculos[g.VIN].total += parseFloat(g.Monto);
-                        groupedVehiculos[g.VIN].count += 1;
-                    });
-                    this.repTablaVehiculos = Object.keys(groupedVehiculos).map(vin => {
-                        return { vin: vin, total: groupedVehiculos[vin].total, count: groupedVehiculos[vin].count };
-                    }).sort((a, b) => b.total - a.total);
-
-                    // Agrupar por Empleado
-                    let groupedEmpleados = {};
-                    filtered.forEach(g => {
-                        let nombre = this.getNombreByEmail(g.Email);
-                        if(!groupedEmpleados[nombre]) groupedEmpleados[nombre] = { total: 0, count: 0 };
-                        groupedEmpleados[nombre].total += parseFloat(g.Monto);
-                        groupedEmpleados[nombre].count += 1;
-                    });
-                    this.repTablaEmpleados = Object.keys(groupedEmpleados).map(emp => {
-                        return { nombre: emp, total: groupedEmpleados[emp].total, count: groupedEmpleados[emp].count };
-                    }).sort((a, b) => b.total - a.total);
-
-                    // Esperar a que el DOM se actualice para renderizar gráficos
-                    this.$nextTick(() => {
-                        this.renderCharts();
-                    });
+                    return filtered;
                 },
 
-                renderCharts() {
-                    // Destruir gráficos anteriores si existen
+                generarReportes() {
+                    let filtered = this.repGastosFiltrados;
+
+                    // Calcular resumen
+                    let total = filtered.reduce((sum, g) => sum + parseFloat(g.Monto), 0);
+                    this.repResumen = { total: total, count: filtered.length };
+
+                    // Renderizar gráficos solo si es general
+                    if(this.repTipo === 'general') {
+                        this.$nextTick(() => {
+                            this.renderCharts(filtered);
+                        });
+                    }
+                },
+
+                renderCharts(filtered) {
                     if(this.chartVehiculos) this.chartVehiculos.destroy();
                     if(this.chartEmpleados) this.chartEmpleados.destroy();
 
-                    // Gráfico de Vehículos (Top 5)
-                    let topVehiculos = this.repTablaVehiculos.slice(0, 5);
+                    // Top Vehículos
+                    let groupedVehiculos = {};
+                    filtered.forEach(g => {
+                        if(!groupedVehiculos[g.VIN]) groupedVehiculos[g.VIN] = 0;
+                        groupedVehiculos[g.VIN] += parseFloat(g.Monto);
+                    });
+                    let topVehiculos = Object.keys(groupedVehiculos).map(vin => {
+                        return { vin: vin, total: groupedVehiculos[vin] };
+                    }).sort((a, b) => b.total - a.total).slice(0, 5);
+
                     const ctxVeh = document.getElementById('chartVehiculos');
                     if(ctxVeh) {
                         this.chartVehiculos = new Chart(ctxVeh, {
@@ -1027,8 +1053,17 @@
                         });
                     }
 
-                    // Gráfico de Empleados (Top 5)
-                    let topEmpleados = this.repTablaEmpleados.slice(0, 5);
+                    // Top Empleados
+                    let groupedEmpleados = {};
+                    filtered.forEach(g => {
+                        let nombre = this.getNombreByEmail(g.Email);
+                        if(!groupedEmpleados[nombre]) groupedEmpleados[nombre] = 0;
+                        groupedEmpleados[nombre] += parseFloat(g.Monto);
+                    });
+                    let topEmpleados = Object.keys(groupedEmpleados).map(emp => {
+                        return { nombre: emp, total: groupedEmpleados[emp] };
+                    }).sort((a, b) => b.total - a.total).slice(0, 5);
+
                     const ctxEmp = document.getElementById('chartEmpleados');
                     if(ctxEmp) {
                         this.chartEmpleados = new Chart(ctxEmp, {
@@ -1039,11 +1074,7 @@
                                     label: 'Total Registrado ($)',
                                     data: topEmpleados.map(e => e.total),
                                     backgroundColor: [
-                                        'rgba(59, 130, 246, 0.6)',
-                                        'rgba(16, 185, 129, 0.6)',
-                                        'rgba(245, 158, 11, 0.6)',
-                                        'rgba(239, 68, 68, 0.6)',
-                                        'rgba(139, 92, 246, 0.6)'
+                                        'rgba(59, 130, 246, 0.6)', 'rgba(16, 185, 129, 0.6)', 'rgba(245, 158, 11, 0.6)', 'rgba(239, 68, 68, 0.6)', 'rgba(139, 92, 246, 0.6)'
                                     ],
                                     borderWidth: 1
                                 }]
@@ -1054,54 +1085,111 @@
                 },
 
                 exportarExcel() {
-                    // Combinar ambas tablas en una hoja de Excel
-                    let dataVehiculos = this.repTablaVehiculos.map(v => ({ Categoria: 'Vehículo', Nombre: v.vin, 'Total Gastado': v.total.toFixed(2), 'Cantidad de Gastos': v.count }));
-                    let dataEmpleados = this.repTablaEmpleados.map(e => ({ Categoria: 'Empleado', Nombre: e.nombre, 'Total Gastado': e.total.toFixed(2), 'Cantidad de Gastos': e.count }));
-                    let dataFinal = [...dataVehiculos, ...dataEmpleados];
-                    
-                    let ws = XLSX.utils.json_to_sheet(dataFinal);
+                    let filtered = this.repGastosFiltrados;
                     let wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, "Reporte HWC");
+
+                    // Hoja 1: Detalle
+                    let dataDetalles = filtered.map(g => ({
+                        Fecha: new Date(g.Fecha).toLocaleDateString(),
+                        Vehiculo: g.VIN,
+                        Empleado: this.getNombreByEmail(g.Email),
+                        Concepto: g.Concepto,
+                        Monto: parseFloat(g.Monto).toFixed(2)
+                    }));
+                    let wsDetalles = XLSX.utils.json_to_sheet(dataDetalles);
+                    XLSX.utils.book_append_sheet(wb, wsDetalles, "Detalle Gastos");
+
+                    // Hoja 2: Top Autos
+                    let groupedVeh = {};
+                    filtered.forEach(g => { if(!groupedVeh[g.VIN]) groupedVeh[g.VIN] = 0; groupedVeh[g.VIN] += parseFloat(g.Monto); });
+                    let dataTopVeh = Object.keys(groupedVeh).map(vin => ({ Vehiculo: vin, "Total Gastado": groupedVeh[vin].toFixed(2) })).sort((a,b) => b["Total Gastado"] - a["Total Gastado"]);
+                    let wsTopVeh = XLSX.utils.json_to_sheet(dataTopVeh);
+                    XLSX.utils.book_append_sheet(wb, wsTopVeh, "Top Autos");
+
+                    // Hoja 3: Top Empleados
+                    let groupedEmp = {};
+                    filtered.forEach(g => { let n = this.getNombreByEmail(g.Email); if(!groupedEmp[n]) groupedEmp[n] = 0; groupedEmp[n] += parseFloat(g.Monto); });
+                    let dataTopEmp = Object.keys(groupedEmp).map(emp => ({ Empleado: emp, "Total Registrado": groupedEmp[emp].toFixed(2) })).sort((a,b) => b["Total Registrado"] - a["Total Registrado"]);
+                    let wsTopEmp = XLSX.utils.json_to_sheet(dataTopEmp);
+                    XLSX.utils.book_append_sheet(wb, wsTopEmp, "Top Empleados");
+
                     XLSX.writeFile(wb, "Reporte_HWC.xlsx");
-                    this.showToast('Éxito', 'Exportado a Excel correctamente');
+                    this.showToast('Éxito', 'Excel generado correctamente');
                 },
 
                 exportarPDF() {
                     const { jsPDF } = window.jspdf;
                     const doc = new jsPDF();
+                    let filtered = this.repGastosFiltrados;
                     
                     // Encabezado
                     doc.setFontSize(20);
                     doc.text("Reporte HWC - Fleet Control", 14, 20);
-                    doc.setFontSize(12);
+                    doc.setFontSize(10);
                     doc.setTextColor(100);
+                    let tipoTexto = "Tipo: General";
+                    if(this.repTipo === 'vehiculo' && this.repVehiculoSel) tipoTexto = `Tipo: Por Vehículo (${this.repVehiculoSel})`;
+                    if(this.repTipo === 'empleado' && this.repEmpleadoSel) tipoTexto = `Tipo: Por Empleado (${this.getNombreByEmail(this.repEmpleadoSel)})`;
+                    doc.text(tipoTexto, 14, 26);
+                    
                     let rangoFechas = "Periodo: Toda la historia";
                     if(this.repFechaInicio && this.repFechaFin) rangoFechas = `Periodo: ${this.repFechaInicio} al ${this.repFechaFin}`;
                     else if(this.repFechaInicio) rangoFechas = `Periodo: Desde ${this.repFechaInicio}`;
                     else if(this.repFechaFin) rangoFechas = `Periodo: Hasta ${this.repFechaFin}`;
-                    doc.text(rangoFechas, 14, 28);
+                    doc.text(rangoFechas, 14, 31);
                     
                     doc.setTextColor(0);
-                    doc.text(`Total Gastado: $${this.repResumen.total.toFixed(2)}`, 14, 36);
-                    doc.text(`Vehículos involucrados: ${this.repResumen.vehiculos}`, 14, 42);
-                    doc.text(`Empleados involucrados: ${this.repResumen.empleados}`, 14, 48);
+                    doc.setFontSize(12);
+                    doc.text(`Total Gastado: $${this.repResumen.total.toFixed(2)}`, 14, 39);
+                    doc.text(`N° de Registros: ${this.repResumen.count}`, 14, 45);
 
-                    // Tabla Vehículos
-                    doc.autoTable({
-                        startY: 56,
-                        head: [['Vehículo (VIN)', 'Total Gastado', 'N° Gastos']],
-                        body: this.repTablaVehiculos.map(v => [v.vin, `$${v.total.toFixed(2)}`, v.count]),
-                        theme: 'striped',
-                        headStyles: { fillColor: [37, 99, 235] }
-                    });
+                    let finalY = 50;
 
-                    // Tabla Empleados
+                    // Si es general, incluir tops
+                    if(this.repTipo === 'general') {
+                        // Top Autos
+                        let groupedVeh = {};
+                        filtered.forEach(g => { if(!groupedVeh[g.VIN]) groupedVeh[g.VIN] = 0; groupedVeh[g.VIN] += parseFloat(g.Monto); });
+                        let topVeh = Object.keys(groupedVeh).map(vin => [vin, `$${groupedVeh[vin].toFixed(2)}`]).sort((a,b) => parseFloat(b[1].replace('$','')) - parseFloat(a[1].replace('$',''))).slice(0,5);
+                        
+                        doc.autoTable({
+                            startY: finalY,
+                            head: [['Top 5 Autos que más gastan', 'Total']],
+                            body: topVeh,
+                            theme: 'striped',
+                            headStyles: { fillColor: [37, 99, 235] }
+                        });
+                        finalY = doc.lastAutoTable.finalY + 5;
+
+                        // Top Empleados
+                        let groupedEmp = {};
+                        filtered.forEach(g => { let n = this.getNombreByEmail(g.Email); if(!groupedEmp[n]) groupedEmp[n] = 0; groupedEmp[n] += parseFloat(g.Monto); });
+                        let topEmp = Object.keys(groupedEmp).map(emp => [emp, `$${groupedEmp[emp].toFixed(2)}`]).sort((a,b) => parseFloat(b[1].replace('$','')) - parseFloat(a[1].replace('$',''))).slice(0,5);
+
+                        doc.autoTable({
+                            startY: finalY,
+                            head: [['Top 5 Empleados que más registran', 'Total']],
+                            body: topEmp,
+                            theme: 'striped',
+                            headStyles: { fillColor: [16, 185, 129] }
+                        });
+                        finalY = doc.lastAutoTable.finalY + 10;
+                    }
+
+                    // Tabla Detallada
                     doc.autoTable({
-                        startY: doc.lastAutoTable.finalY + 10,
-                        head: [['Empleado', 'Total Registrado', 'N° Gastos']],
-                        body: this.repTablaEmpleados.map(e => [e.nombre, `$${e.total.toFixed(2)}`, e.count]),
-                        theme: 'striped',
-                        headStyles: { fillColor: [16, 185, 129] }
+                        startY: finalY,
+                        head: [['Fecha', 'Vehículo', 'Empleado', 'Concepto', 'Monto']],
+                        body: filtered.map(g => [
+                            new Date(g.Fecha).toLocaleDateString(),
+                            g.VIN,
+                            this.getNombreByEmail(g.Email),
+                            g.Concepto,
+                            `$${parseFloat(g.Monto).toFixed(2)}`
+                        ]),
+                        theme: 'grid',
+                        headStyles: { fillColor: [107, 114, 128] },
+                        styles: { fontSize: 8 }
                     });
 
                     doc.save("Reporte_HWC.pdf");
