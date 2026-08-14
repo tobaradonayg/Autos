@@ -7,7 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans" x-data="fleetApp()" :class="{'overflow-hidden': gastoModalOpen || modalOpen || vehiculoModalOpen || confirmModal.show}">
+<!-- CORRECCIÓN: Agregado sidebarOpen al bloqueo de scroll -->
+<body class="bg-gray-100 font-sans" x-data="fleetApp()" :class="{'overflow-hidden': gastoModalOpen || modalOpen || vehiculoModalOpen || confirmModal.show || sidebarOpen}">
 
     <!-- NOTIFICACIONES (TOASTS) - Centradas abajo -->
     <div x-show="toast.show" x-transition class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] max-w-sm w-[90%] bg-white rounded-xl shadow-2xl border-l-4 overflow-hidden" :class="toast.type === 'success' ? 'border-green-500' : 'border-red-500'" style="display: none;">
@@ -89,7 +90,6 @@
 
         <div class="md:ml-72 min-h-screen flex flex-col">
             <header class="bg-white p-4 flex items-center justify-between md:hidden shadow-sm sticky top-0 z-20">
-                <!-- CORRECCIÓN: El SVG del icono de hamburguesa tenía un error de tipeo -->
                 <button @click="sidebarOpen = true" class="text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
@@ -175,12 +175,24 @@
                 <div x-show="activeSection === 'historial'" style="display: none;">
                     <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Historial de Gastos</h1>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+                        <!-- CORRECCIÓN: Etiquetas para los inputs para que en móvil se sepa qué es cada cosa -->
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <input type="text" x-model="filtroAuto" @input="currentPage = 1" placeholder="Buscar por VIN/Modelo..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
-                            <input type="text" x-model="filtroConcepto" @input="currentPage = 1" placeholder="Buscar por Concepto..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
-                            <input type="text" x-show="currentUser?.rol === 'Admin'" x-model="filtroEmpleado" @input="currentPage = 1" placeholder="Buscar por Empleado..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
-                            <!-- CORRECCIÓN: Estilos para input de fecha en móvil -->
-                            <input type="date" x-model="filtroFecha" @change="currentPage = 1" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-700">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">VIN / Modelo</label>
+                                <input type="text" x-model="filtroAuto" @input="currentPage = 1" placeholder="Buscar..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Concepto</label>
+                                <input type="text" x-model="filtroConcepto" @input="currentPage = 1" placeholder="Buscar..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
+                            </div>
+                            <div x-show="currentUser?.rol === 'Admin'">
+                                <label class="block text-xs text-gray-500 mb-1">Empleado</label>
+                                <input type="text" x-model="filtroEmpleado" @input="currentPage = 1" placeholder="Buscar..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Fecha</label>
+                                <input type="date" x-model="filtroFecha" @change="currentPage = 1" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-700">
+                            </div>
                         </div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -234,10 +246,16 @@
                     </div>
 
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+                        <!-- CORRECCIÓN: Etiquetas para los inputs -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <input type="text" x-show="currentUser?.rol === 'Admin'" x-model="filtroEmpleadoVeh" @input="currentPageVehiculo = 1" placeholder="Filtrar por Empleado..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
-                            <!-- CORRECCIÓN: Estilos para input de fecha en móvil -->
-                            <input type="date" x-model="filtroFechaVeh" @change="currentPageVehiculo = 1" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-700 md:col-span-2">
+                            <div x-show="currentUser?.rol === 'Admin'">
+                                <label class="block text-xs text-gray-500 mb-1">Empleado</label>
+                                <input type="text" x-model="filtroEmpleadoVeh" @input="currentPageVehiculo = 1" placeholder="Buscar..." class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
+                            </div>
+                            <div :class="currentUser?.rol === 'Admin' ? 'md:col-span-2' : 'md:col-span-3'">
+                                <label class="block text-xs text-gray-500 mb-1">Fecha</label>
+                                <input type="date" x-model="filtroFechaVeh" @change="currentPageVehiculo = 1" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-700">
+                            </div>
                         </div>
                     </div>
 
@@ -380,11 +398,11 @@
                         No se encontraron vehículos. Intenta con otro nombre o VIN.
                     </div>
 
-                    <!-- SELECT DE FAVORITOS -->
+                    <!-- SELECT DE FAVORITOS (Corregido para lectura directa de valor) -->
                     <div x-show="vehiculosFavoritos.length > 0" class="mt-4">
                         <label class="block text-xs font-medium text-gray-500 mb-1">O selecciona rápido de tus Favoritos (★)</label>
-                        <select x-model="favSelectValue" @change="selectFavVehiculo(favSelectValue)" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
-                            <option value="">-- Mis carros favoritos --</option>
+                        <select @change="selectFavVehiculo($event.target.value); $event.target.value=''" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
+                            <option value="" selected disabled>-- Mis carros favoritos --</option>
                             <template x-for="v in vehiculosFavoritos" :key="v.VIN">
                                 <option :value="v.VIN" x-text="`${v.VIN} - ${v.Model}`"></option>
                             </template>
@@ -398,7 +416,7 @@
                         <p class="text-xs text-blue-600 font-medium">Vehículo Seleccionado:</p>
                         <p class="text-sm text-blue-800 font-bold" x-text="vehiculoBuscadoFAB"></p>
                     </div>
-                    <button @click="nuevoGasto.vin = ''; vehiculoBuscadoFAB = ''; favSelectValue = ''" class="text-red-500 hover:text-red-700 text-sm font-medium">Cambiar</button>
+                    <button @click="nuevoGasto.vin = ''; vehiculoBuscadoFAB = ''" class="text-red-500 hover:text-red-700 text-sm font-medium">Cambiar</button>
                 </div>
 
                 <!-- RESTO DEL FORMULARIO -->
@@ -544,7 +562,7 @@
                 modalOpen: false, selectedGasto: null, isEditing: false, editData: { id: '', monto: '', concepto: '' },
                 vehiculoModalOpen: false, selectedVehiculo: null, isEditingVehiculo: false, editVehiculoData: {},
                 gastoModalOpen: false, 
-                vehiculoBuscadoFAB: '', vehiculosFiltradosFAB: [], favSelectValue: '',
+                vehiculoBuscadoFAB: '', vehiculosFiltradosFAB: [],
                 nuevoGasto: { vin: '', monto: '', concepto: '', fotoBase64: null }, newVehiculo: { vin: '', year: '', model: '', color: '', title: '', asignadoA: '', note: '' }, isUploading: false, fotoPreview: '',
                 busquedaVehiculo: '', filtroAuto: '', filtroConcepto: '', filtroFecha: '', filtroEmpleado: '',
                 filtroFechaVeh: '', filtroEmpleadoVeh: '',
@@ -645,7 +663,6 @@
                     this.nuevoGasto = { vin, monto: '', concepto: '', fotoBase64: null }; 
                     this.fotoPreview = ''; 
                     this.vehiculosFiltradosFAB = [];
-                    this.favSelectValue = '';
                     if(vin) {
                         let v = this.vehiculos.find(x => x.VIN === vin);
                         if(v) this.vehiculoBuscadoFAB = `${v.Model} (${v.VIN})`;
@@ -674,7 +691,6 @@
                     this.nuevoGasto.vin = v.VIN;
                     this.vehiculoBuscadoFAB = `${v.Model} (${v.VIN})`;
                     this.vehiculosFiltradosFAB = []; 
-                    this.favSelectValue = '';
                 },
 
                 selectFavVehiculo(vin) {
