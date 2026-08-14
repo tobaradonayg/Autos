@@ -547,7 +547,7 @@
                             // Revisar cada 45 segundos si hubo cambios
                             this.syncInterval = setInterval(() => {
                                 if (this.currentUser) this.loadData(true);
-                            }, 45000);
+                            }, 300000);
                         }
                     };
                     const stopSync = () => {
