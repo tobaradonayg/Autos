@@ -512,7 +512,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzWznomuAR4GnOVdKP6FWS9uCntjL0RyvM6o1p-CTo20aVcI-3Az7uP0VFu3M1AWzWf/exec'; // ¡CAMBIA ESTO!
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzWznomuAR4GnOVdKP6FWS9uCntjL0RyvM6o1p-CTo20aVcI-3Az7uP0VFu3M1AWzWf/exec'; // ¡TU URL AQUÍ!
 
         function fleetApp() {
             return {
@@ -528,6 +528,7 @@
                 filtroFechaVeh: '', filtroEmpleadoVeh: '',
                 itemsPerPage: 50, currentPage: 1, currentPageVehiculo: 1,
                 toast: { show: false, type: 'success', title: '', message: '' },
+                syncInterval: null, lastSync: 0, // Variables para el Delta Sync
 
                 init() {
                     const savedUser = localStorage.getItem('fleetUser');
@@ -537,19 +538,33 @@
                         this.currentUser = JSON.parse(savedUser); 
                         this.loadData(); 
                     }
+                    this.setupAutoSync();
+                },
 
-                    // SINCRONIZACIÓN AUTOMÁTICA EN SEGUNDO PLANO
-                    // 1. Si el usuario vuelve a la pestaña
+                setupAutoSync() {
+                    const startSync = () => {
+                        if (!this.syncInterval && this.currentUser) {
+                            // Revisar cada 45 segundos si hubo cambios
+                            this.syncInterval = setInterval(() => {
+                                if (this.currentUser) this.loadData(true);
+                            }, 45000);
+                        }
+                    };
+                    const stopSync = () => {
+                        if (this.syncInterval) {
+                            clearInterval(this.syncInterval);
+                            this.syncInterval = null;
+                        }
+                    };
                     document.addEventListener('visibilitychange', () => {
-                        if (!document.hidden && this.currentUser) {
-                            this.loadData(true);
+                        if (document.hidden) {
+                            stopSync(); // Pausar si se van a otra pestaña
+                        } else {
+                            if (this.currentUser) this.loadData(true); // Actualizar al volver
+                            startSync();
                         }
                     });
-
-                    // 2. Revisar nuevos datos cada 15 segundos (15000 ms) silenciosamente
-                    setInterval(() => {
-                        if (this.currentUser) this.loadData(true);
-                    }, 15000);
+                    startSync();
                 },
 
                 showToast(title, message, type = 'success') {
@@ -557,16 +572,27 @@
                     setTimeout(() => { this.toast.show = false; }, 3000);
                 },
 
-                // isBackground evita que salga el loader gigante si es actualización silenciosa
+                // LÓGICA DELTA SYNC
                 async loadData(isBackground = false) {
                     if (!isBackground) this.loadingData = true;
                     
-                    const userRes = await this.fetchData('getUsuarios');
-                    if (userRes.status === 'success') this.usuarios = userRes.data;
-                    const vehRes = await this.fetchData('getVehiculos');
-                    if (vehRes.status === 'success') { this.vehiculos = vehRes.data; this.vehiculosFiltrados = vehRes.data; }
-                    const gasRes = await this.fetchData('getGastos', { email: this.currentUser.email, rol: this.currentUser.rol });
-                    if (gasRes.status === 'success') this.gastos = gasRes.data;
+                    // Le enviamos a Google Sheets la última vez que sincronizamos
+                    const res = await this.fetchData('getAllData', { 
+                        email: this.currentUser.email, 
+                        rol: this.currentUser.rol,
+                        lastSync: this.lastSync
+                    });
+                    
+                    if (res.status === 'success') {
+                        if (res.data !== null) { // Si Google dice "hay cambios", actualizamos
+                            this.usuarios = res.data.usuarios;
+                            this.vehiculos = res.data.vehiculos;
+                            this.vehiculosFiltrados = res.data.vehiculos;
+                            this.gastos = res.data.gastos;
+                        }
+                        // Guardamos la fecha de la última revisión de la hoja
+                        if (res.lastUpdated) this.lastSync = res.lastUpdated;
+                    }
                     
                     if (!isBackground) this.loadingData = false;
                 },
@@ -581,15 +607,21 @@
                 async handleLogin() {
                     const res = await this.fetchData('login', { email: this.loginEmail, password: this.loginPass });
                     if (res.status === 'success') {
-                        this.currentUser = res.user; localStorage.setItem('fleetUser', JSON.stringify(this.currentUser)); this.loginError = ''; await this.loadData();
+                        this.currentUser = res.user; 
+                        localStorage.setItem('fleetUser', JSON.stringify(this.currentUser)); 
+                        this.loginError = ''; 
+                        this.lastSync = 0; // Resetear sync al entrar
+                        await this.loadData();
                     } else { this.loginError = 'Usuario o contraseña incorrectos.'; }
                 },
 
-                handleLogout() { localStorage.removeItem('fleetUser'); this.currentUser = null; },
-
-                showSection(section) { 
-                    this.activeSection = section;
+                handleLogout() { 
+                    localStorage.removeItem('fleetUser'); 
+                    this.currentUser = null; 
+                    if(this.syncInterval) clearInterval(this.syncInterval); 
                 },
+
+                showSection(section) { this.activeSection = section; },
 
                 getNombreByEmail(email) { if(!email) return 'Desconocido'; let user = this.usuarios.find(u => u.Email === email); return user ? user.Nombre : email; },
 
@@ -631,9 +663,7 @@
                     const vin = event.target.value;
                     if(!vin) return;
                     const v = this.vehiculos.find(x => x.VIN === vin);
-                    if(v) {
-                        this.selectVehiculoFAB(v);
-                    }
+                    if(v) this.selectVehiculoFAB(v);
                 },
 
                 handleFileUpload(e) {
@@ -654,17 +684,23 @@
                     reader.readAsDataURL(file);
                 },
 
+                // CUANDO TÚ AGREGAS UN GASTO, FUERZA LA ACTUALIZACIÓN INMEDIATA
                 async submitGasto() {
                     if(!this.nuevoGasto.vin || !this.nuevoGasto.monto || !this.nuevoGasto.concepto) { this.showToast('Faltan datos', 'Completa todos los campos.', 'error'); return; }
                     const res = await this.fetchData('addGasto', { vin: this.nuevoGasto.vin, email: this.currentUser.email, monto: this.nuevoGasto.monto, concepto: this.nuevoGasto.concepto, fotoBase64: this.nuevoGasto.fotoBase64 || null });
-                    if (res.status === 'success') { this.showToast('Éxito', 'Gasto guardado correctamente'); this.gastoModalOpen = false; await this.loadData(); } 
+                    if (res.status === 'success') { 
+                        this.showToast('Éxito', 'Gasto guardado correctamente'); 
+                        this.gastoModalOpen = false; 
+                        this.lastSync = 0; // Forzamos a que la próxima carga traiga los datos nuevos
+                        await this.loadData(); 
+                    } 
                     else { this.showToast('Error', 'No se pudo guardar el gasto.', 'error'); }
                 },
 
                 async addVehiculo() {
                     if(!this.newVehiculo.vin || !this.newVehiculo.model) { this.showToast('Faltan datos', 'VIN y Modelo son obligatorios.', 'error'); return; }
                     const res = await this.fetchData('addVehiculo', { ...this.newVehiculo, user: this.currentUser.nombre });
-                    if (res.status === 'success') { this.showToast('Éxito', 'Vehículo agregado correctamente'); this.newVehiculo = { vin: '', year: '', model: '', color: '', title: '', asignadoA: '', note: '' }; await this.loadData(); }
+                    if (res.status === 'success') { this.showToast('Éxito', 'Vehículo agregado correctamente'); this.newVehiculo = { vin: '', year: '', model: '', color: '', title: '', asignadoA: '', note: '' }; this.lastSync = 0; await this.loadData(); }
                 },
 
                 openModal(gasto) { this.selectedGasto = gasto; this.vehiculoModalOpen = false; this.modalOpen = true; this.isEditing = false; },
@@ -681,13 +717,13 @@
                 
                 async saveEdit() {
                     const res = await this.fetchData('editGasto', this.editData);
-                    if (res.status === 'success') { this.showToast('Éxito', 'Gasto actualizado'); this.isEditing = false; this.modalOpen = false; await this.loadData(); }
+                    if (res.status === 'success') { this.showToast('Éxito', 'Gasto actualizado'); this.isEditing = false; this.modalOpen = false; this.lastSync = 0; await this.loadData(); }
                 },
 
                 async deleteGasto() {
                     if(!confirm("¿Eliminar este gasto?")) return;
                     const res = await this.fetchData('deleteGasto', { id: this.selectedGasto.ID });
-                    if (res.status === 'success') { this.showToast('Éxito', 'Gasto eliminado'); this.modalOpen = false; await this.loadData(); }
+                    if (res.status === 'success') { this.showToast('Éxito', 'Gasto eliminado'); this.modalOpen = false; this.lastSync = 0; await this.loadData(); }
                 },
 
                 startEditVehiculo() {
@@ -697,13 +733,13 @@
 
                 async saveEditVehiculo() {
                     const res = await this.fetchData('editVehiculo', { ...this.editVehiculoData, user: this.currentUser.nombre });
-                    if (res.status === 'success') { this.showToast('Éxito', 'Vehículo actualizado'); this.isEditingVehiculo = false; await this.loadData(); this.openVehiculoModal(this.vehiculos.find(v => v.VIN === this.editVehiculoData.vin)); }
+                    if (res.status === 'success') { this.showToast('Éxito', 'Vehículo actualizado'); this.isEditingVehiculo = false; this.lastSync = 0; await this.loadData(); this.openVehiculoModal(this.vehiculos.find(v => v.VIN === this.editVehiculoData.vin)); }
                 },
 
                 async deleteVehiculo() {
                     if(!confirm("¿Eliminar este vehículo?")) return;
                     const res = await this.fetchData('deleteVehiculo', { vin: this.selectedVehiculo.VIN });
-                    if (res.status === 'success') { this.showToast('Éxito', 'Vehículo eliminado'); this.vehiculoModalOpen = false; await this.loadData(); }
+                    if (res.status === 'success') { this.showToast('Éxito', 'Vehículo eliminado'); this.vehiculoModalOpen = false; this.lastSync = 0; await this.loadData(); }
                 },
 
                 toggleFavorite(vin) {
