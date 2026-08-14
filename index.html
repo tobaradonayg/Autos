@@ -7,10 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans" x-data="fleetApp()">
+<body class="bg-gray-100 font-sans" x-data="fleetApp()" :class="{'overflow-hidden': gastoModalOpen || modalOpen || vehiculoModalOpen || confirmModal.show}">
 
-    <!-- NOTIFICACIONES (TOASTS) -->
-    <div x-show="toast.show" x-transition class="fixed top-5 right-5 z-[100] max-w-sm w-full bg-white rounded-xl shadow-2xl border-l-4 overflow-hidden" :class="toast.type === 'success' ? 'border-green-500' : 'border-red-500'" style="display: none;">
+    <!-- NOTIFICACIONES (TOASTS) - Centradas abajo -->
+    <div x-show="toast.show" x-transition class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] max-w-sm w-[90%] bg-white rounded-xl shadow-2xl border-l-4 overflow-hidden" :class="toast.type === 'success' ? 'border-green-500' : 'border-red-500'" style="display: none;">
         <div class="p-4 flex items-center">
             <div class="mr-3">
                 <template x-if="toast.type === 'success'">
@@ -90,7 +90,7 @@
         <div class="md:ml-72 min-h-screen flex flex-col">
             <header class="bg-white p-4 flex items-center justify-between md:hidden shadow-sm sticky top-0 z-20">
                 <button @click="sidebarOpen = true" class="text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    <svg class="w-6 h-6" fill="none, stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
                 <h2 class="font-bold text-gray-800">Fleet<span class="text-blue-600">Control</span></h2>
                 <div class="w-6"></div>
@@ -98,7 +98,7 @@
 
             <main class="flex-1 p-4 md:p-8 relative pb-24">
                 
-                <!-- LOADER (Solo se muestra en cargas manuales o iniciales) -->
+                <!-- LOADER -->
                 <div x-show="loadingData" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10" style="display:none;">
                     <svg class="animate-spin h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                 </div>
@@ -144,21 +144,22 @@
                     </div>
                 </div>
 
-                <!-- MIS CARROS -->
+                <!-- MIS CARROS (Cards Clickeables) -->
                 <div x-show="activeSection === 'miscarros'" style="display: none;">
                     <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Mis Carros</h1>
                     <p class="text-gray-500 mb-6">Vehículos asignados a ti o marcados como favoritos.</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <template x-for="v in misCarros" :key="v.VIN">
-                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative hover:shadow-md transition-shadow">
-                                <button @click="toggleFavorite(v.VIN)" class="absolute top-4 right-4 text-2xl" :class="isFavorite(v.VIN) ? 'text-yellow-400' : 'text-gray-300 hover:text-gray-400'">★</button>
+                            <!-- Se añadió cursor-pointer y @click a la tarjeta -->
+                            <div @click="openVehiculoModal(v)" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative hover:shadow-md transition-shadow cursor-pointer">
+                                <button @click.stop="toggleFavorite(v.VIN)" class="absolute top-4 right-4 text-2xl" :class="isFavorite(v.VIN) ? 'text-yellow-400' : 'text-gray-300 hover:text-gray-400'">★</button>
                                 <h3 class="font-bold text-xl text-gray-800" x-text="v.Model"></h3>
                                 <p class="text-sm text-blue-600 font-medium mb-4" x-text="v.VIN"></p>
                                 <div class="text-sm space-y-1 mb-4 text-gray-600">
                                     <p>Año: <span x-text="v.Year"></span></p>
                                     <p>Color: <span x-text="v.Color"></span></p>
                                 </div>
-                                <button @click="openGastoModal(v.VIN)" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-semibold transition-colors flex items-center justify-center gap-2">
+                                <button @click.stop="openGastoModal(v.VIN)" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-semibold transition-colors flex items-center justify-center gap-2">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                     Cargar Gasto
                                 </button>
@@ -327,6 +328,25 @@
         </button>
     </div>
 
+    <!-- MODAL DE CONFIRMACIÓN (Nuevo) -->
+    <div x-show="confirmModal.show" class="fixed inset-0 z-[90] bg-black bg-opacity-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+            <div class="p-6">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800" x-text="confirmModal.title"></h3>
+                </div>
+                <p class="text-gray-500 mb-6" x-text="confirmModal.message"></p>
+                <div class="flex gap-4">
+                    <button @click="confirmModal.show = false" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 font-medium transition-colors">Cancelar</button>
+                    <button @click="confirmModal.action()" class="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-medium transition-colors">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL FULL SCREEN: AGREGAR GASTO RÁPIDO -->
     <div x-show="gastoModalOpen" class="fixed inset-0 z-[60] bg-white overflow-y-auto" style="display: none;">
         <div class="sticky top-0 bg-white z-10 p-4 border-b flex justify-between items-center shadow-sm">
@@ -358,10 +378,10 @@
                         No se encontraron vehículos. Intenta con otro nombre o VIN.
                     </div>
 
-                    <!-- SELECT DE FAVORITOS -->
+                    <!-- SELECT DE FAVORITOS (Corregido con x-model) -->
                     <div x-show="vehiculosFavoritos.length > 0" class="mt-4">
                         <label class="block text-xs font-medium text-gray-500 mb-1">O selecciona rápido de tus Favoritos (★)</label>
-                        <select @change="selectFavVehiculo($event)" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
+                        <select x-model="favSelectValue" @change="selectFavVehiculo(favSelectValue)" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg">
                             <option value="">-- Mis carros favoritos --</option>
                             <template x-for="v in vehiculosFavoritos" :key="v.VIN">
                                 <option :value="v.VIN" x-text="`${v.VIN} - ${v.Model}`"></option>
@@ -376,7 +396,7 @@
                         <p class="text-xs text-blue-600 font-medium">Vehículo Seleccionado:</p>
                         <p class="text-sm text-blue-800 font-bold" x-text="vehiculoBuscadoFAB"></p>
                     </div>
-                    <button @click="nuevoGasto.vin = ''; vehiculoBuscadoFAB = ''" class="text-red-500 hover:text-red-700 text-sm font-medium">Cambiar</button>
+                    <button @click="nuevoGasto.vin = ''; vehiculoBuscadoFAB = ''; favSelectValue = ''" class="text-red-500 hover:text-red-700 text-sm font-medium">Cambiar</button>
                 </div>
 
                 <!-- RESTO DEL FORMULARIO -->
@@ -439,7 +459,7 @@
                         </div>
                         <div class="flex flex-wrap gap-4 mt-6 border-t pt-4">
                             <button x-show="!isEditing && selectedGasto.Email === currentUser.email" @click="startEdit()" class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 font-medium">Editar</button>
-                            <button x-show="!isEditing && (selectedGasto.Email === currentUser.email || currentUser.rol === 'Admin')" @click="deleteGasto()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium">Eliminar</button>
+                            <button x-show="!isEditing && (selectedGasto.Email === currentUser.email || currentUser.rol === 'Admin')" @click="requestDelete('gasto')" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium">Eliminar</button>
                             <button x-show="isEditing" @click="saveEdit()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium">Guardar</button>
                             <button x-show="isEditing" @click="isEditing = false" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 font-medium">Cancelar</button>
                         </div>
@@ -499,7 +519,7 @@
                             Ver Historial Completo
                         </button>
                         <button x-show="currentUser.rol === 'Admin'" @click="startEditVehiculo()" class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 font-medium">Editar Vehículo</button>
-                        <button x-show="currentUser.rol === 'Admin'" @click="deleteVehiculo()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium">Eliminar Vehículo</button>
+                        <button x-show="currentUser.rol === 'Admin'" @click="requestDelete('vehiculo')" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-medium">Eliminar Vehículo</button>
                         <button @click="toggleFavorite(selectedVehiculo.VIN)" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 font-medium" x-text="isFavorite(selectedVehiculo.VIN) ? 'Quitar de Favoritos' : 'Añadir a Favoritos'"></button>
                     </div>
                     <div x-show="isEditingVehiculo" class="flex gap-4 mb-8" style="display: none;">
@@ -522,13 +542,14 @@
                 modalOpen: false, selectedGasto: null, isEditing: false, editData: { id: '', monto: '', concepto: '' },
                 vehiculoModalOpen: false, selectedVehiculo: null, isEditingVehiculo: false, editVehiculoData: {},
                 gastoModalOpen: false, 
-                vehiculoBuscadoFAB: '', vehiculosFiltradosFAB: [],
+                vehiculoBuscadoFAB: '', vehiculosFiltradosFAB: [], favSelectValue: '',
                 nuevoGasto: { vin: '', monto: '', concepto: '', fotoBase64: null }, newVehiculo: { vin: '', year: '', model: '', color: '', title: '', asignadoA: '', note: '' }, isUploading: false, fotoPreview: '',
                 busquedaVehiculo: '', filtroAuto: '', filtroConcepto: '', filtroFecha: '', filtroEmpleado: '',
                 filtroFechaVeh: '', filtroEmpleadoVeh: '',
                 itemsPerPage: 50, currentPage: 1, currentPageVehiculo: 1,
                 toast: { show: false, type: 'success', title: '', message: '' },
-                syncInterval: null, lastSync: 0, // Variables para el Delta Sync
+                syncInterval: null, lastSync: 0, 
+                confirmModal: { show: false, title: '', message: '', action: null }, // Nuevo estado para el modal de confirmación
 
                 init() {
                     const savedUser = localStorage.getItem('fleetUser');
@@ -544,10 +565,9 @@
                 setupAutoSync() {
                     const startSync = () => {
                         if (!this.syncInterval && this.currentUser) {
-                            // Revisar cada 45 segundos si hubo cambios
                             this.syncInterval = setInterval(() => {
                                 if (this.currentUser) this.loadData(true);
-                            }, 300000);
+                            }, 300000); // 5 minutos
                         }
                     };
                     const stopSync = () => {
@@ -558,9 +578,9 @@
                     };
                     document.addEventListener('visibilitychange', () => {
                         if (document.hidden) {
-                            stopSync(); // Pausar si se van a otra pestaña
+                            stopSync(); 
                         } else {
-                            if (this.currentUser) this.loadData(true); // Actualizar al volver
+                            if (this.currentUser) this.loadData(true); 
                             startSync();
                         }
                     });
@@ -572,28 +592,22 @@
                     setTimeout(() => { this.toast.show = false; }, 3000);
                 },
 
-                // LÓGICA DELTA SYNC
                 async loadData(isBackground = false) {
                     if (!isBackground) this.loadingData = true;
-                    
-                    // Le enviamos a Google Sheets la última vez que sincronizamos
                     const res = await this.fetchData('getAllData', { 
                         email: this.currentUser.email, 
                         rol: this.currentUser.rol,
                         lastSync: this.lastSync
                     });
-                    
                     if (res.status === 'success') {
-                        if (res.data !== null) { // Si Google dice "hay cambios", actualizamos
+                        if (res.data !== null) { 
                             this.usuarios = res.data.usuarios;
                             this.vehiculos = res.data.vehiculos;
                             this.vehiculosFiltrados = res.data.vehiculos;
                             this.gastos = res.data.gastos;
                         }
-                        // Guardamos la fecha de la última revisión de la hoja
                         if (res.lastUpdated) this.lastSync = res.lastUpdated;
                     }
-                    
                     if (!isBackground) this.loadingData = false;
                 },
 
@@ -610,7 +624,7 @@
                         this.currentUser = res.user; 
                         localStorage.setItem('fleetUser', JSON.stringify(this.currentUser)); 
                         this.loginError = ''; 
-                        this.lastSync = 0; // Resetear sync al entrar
+                        this.lastSync = 0; 
                         await this.loadData();
                     } else { this.loginError = 'Usuario o contraseña incorrectos.'; }
                 },
@@ -629,6 +643,7 @@
                     this.nuevoGasto = { vin, monto: '', concepto: '', fotoBase64: null }; 
                     this.fotoPreview = ''; 
                     this.vehiculosFiltradosFAB = [];
+                    this.favSelectValue = '';
                     if(vin) {
                         let v = this.vehiculos.find(x => x.VIN === vin);
                         if(v) this.vehiculoBuscadoFAB = `${v.Model} (${v.VIN})`;
@@ -657,10 +672,10 @@
                     this.nuevoGasto.vin = v.VIN;
                     this.vehiculoBuscadoFAB = `${v.Model} (${v.VIN})`;
                     this.vehiculosFiltradosFAB = []; 
+                    this.favSelectValue = '';
                 },
 
-                selectFavVehiculo(event) {
-                    const vin = event.target.value;
+                selectFavVehiculo(vin) {
                     if(!vin) return;
                     const v = this.vehiculos.find(x => x.VIN === vin);
                     if(v) this.selectVehiculoFAB(v);
@@ -684,14 +699,13 @@
                     reader.readAsDataURL(file);
                 },
 
-                // CUANDO TÚ AGREGAS UN GASTO, FUERZA LA ACTUALIZACIÓN INMEDIATA
                 async submitGasto() {
                     if(!this.nuevoGasto.vin || !this.nuevoGasto.monto || !this.nuevoGasto.concepto) { this.showToast('Faltan datos', 'Completa todos los campos.', 'error'); return; }
                     const res = await this.fetchData('addGasto', { vin: this.nuevoGasto.vin, email: this.currentUser.email, monto: this.nuevoGasto.monto, concepto: this.nuevoGasto.concepto, fotoBase64: this.nuevoGasto.fotoBase64 || null });
                     if (res.status === 'success') { 
                         this.showToast('Éxito', 'Gasto guardado correctamente'); 
                         this.gastoModalOpen = false; 
-                        this.lastSync = 0; // Forzamos a que la próxima carga traiga los datos nuevos
+                        this.lastSync = 0; 
                         await this.loadData(); 
                     } 
                     else { this.showToast('Error', 'No se pudo guardar el gasto.', 'error'); }
@@ -720,10 +734,31 @@
                     if (res.status === 'success') { this.showToast('Éxito', 'Gasto actualizado'); this.isEditing = false; this.modalOpen = false; this.lastSync = 0; await this.loadData(); }
                 },
 
-                async deleteGasto() {
-                    if(!confirm("¿Eliminar este gasto?")) return;
-                    const res = await this.fetchData('deleteGasto', { id: this.selectedGasto.ID });
-                    if (res.status === 'success') { this.showToast('Éxito', 'Gasto eliminado'); this.modalOpen = false; this.lastSync = 0; await this.loadData(); }
+                // NUEVAS FUNCIONES PARA EL MODAL DE CONFIRMACIÓN
+                requestDelete(type) {
+                    if (type === 'gasto') {
+                        this.confirmModal = {
+                            show: true,
+                            title: 'Eliminar Gasto',
+                            message: '¿Estás seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer.',
+                            action: async () => {
+                                this.confirmModal.show = false;
+                                const res = await this.fetchData('deleteGasto', { id: this.selectedGasto.ID });
+                                if (res.status === 'success') { this.showToast('Éxito', 'Gasto eliminado'); this.modalOpen = false; this.lastSync = 0; await this.loadData(); }
+                            }
+                        };
+                    } else if (type === 'vehiculo') {
+                        this.confirmModal = {
+                            show: true,
+                            title: 'Eliminar Vehículo',
+                            message: '¿Estás seguro de que deseas eliminar este vehículo? Esta acción no se puede deshacer.',
+                            action: async () => {
+                                this.confirmModal.show = false;
+                                const res = await this.fetchData('deleteVehiculo', { vin: this.selectedVehiculo.VIN });
+                                if (res.status === 'success') { this.showToast('Éxito', 'Vehículo eliminado'); this.vehiculoModalOpen = false; this.lastSync = 0; await this.loadData(); }
+                            }
+                        };
+                    }
                 },
 
                 startEditVehiculo() {
@@ -734,12 +769,6 @@
                 async saveEditVehiculo() {
                     const res = await this.fetchData('editVehiculo', { ...this.editVehiculoData, user: this.currentUser.nombre });
                     if (res.status === 'success') { this.showToast('Éxito', 'Vehículo actualizado'); this.isEditingVehiculo = false; this.lastSync = 0; await this.loadData(); this.openVehiculoModal(this.vehiculos.find(v => v.VIN === this.editVehiculoData.vin)); }
-                },
-
-                async deleteVehiculo() {
-                    if(!confirm("¿Eliminar este vehículo?")) return;
-                    const res = await this.fetchData('deleteVehiculo', { vin: this.selectedVehiculo.VIN });
-                    if (res.status === 'success') { this.showToast('Éxito', 'Vehículo eliminado'); this.vehiculoModalOpen = false; this.lastSync = 0; await this.loadData(); }
                 },
 
                 toggleFavorite(vin) {
