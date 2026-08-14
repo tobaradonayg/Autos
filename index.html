@@ -344,7 +344,7 @@
                     </div>
                 </div>
 
-                <!-- SECCIÓN: REPORTES HWC (Mejorada) -->
+                <!-- SECCIÓN: REPORTES HWC -->
                 <div x-show="activeSection === 'reportes'" style="display: none;" x-init="$watch('activeSection', (value) => { if(value === 'reportes') generarReportes() })">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         <div>
@@ -363,9 +363,9 @@
                         </div>
                     </div>
 
-                    <!-- Filtros Reportes -->
+                    <!-- Filtros Reportes (Mejorados con Buscadores) -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Tipo de Reporte</label>
                                 <select x-model="repTipo" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
@@ -374,29 +374,48 @@
                                     <option value="empleado">Por Empleado</option>
                                 </select>
                             </div>
+                            
+                            <!-- Buscador de Vehículo para Reportes -->
                             <div x-show="repTipo === 'vehiculo'">
-                                <label class="block text-xs text-gray-500 mb-1">Seleccionar Vehículo</label>
-                                <select x-model="repVehiculoSel" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
-                                    <option value="">Todos los vehículos</option>
-                                    <template x-for="v in vehiculos" :key="v.VIN">
-                                        <option :value="v.VIN" x-text="`${v.VIN} - ${v.Model}`"></option>
+                                <label class="block text-xs text-gray-500 mb-1">Buscar Vehículo</label>
+                                <input type="text" x-model="repVehiculoBuscado" @input="filtrarRepVehiculos()" placeholder="Ej: Toyota o 1234ABCD" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg mb-1">
+                                <div x-show="repVehiculoBuscado && repVehiculoSel === ''" class="border border-gray-200 rounded-lg max-h-32 overflow-y-auto divide-y mb-1">
+                                    <template x-for="v in repVehiculosFiltrados" :key="v.VIN">
+                                        <div @click="selectRepVehiculo(v)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">
+                                            <span x-text="`${v.VIN} - ${v.Model}`"></span>
+                                        </div>
                                     </template>
-                                </select>
+                                    <div x-show="repVehiculosFiltrados.length === 0" class="p-2 text-xs text-gray-400 text-center">No encontrado</div>
+                                </div>
+                                <div x-show="repVehiculoSel !== ''" class="p-2 bg-blue-50 rounded-lg flex justify-between items-center text-sm">
+                                    <span x-text="repVehiculoBuscado"></span>
+                                    <button @click="repVehiculoSel = ''; repVehiculoBuscado = ''; generarReportes()" class="text-red-500 text-xs font-medium">Quitar</button>
+                                </div>
                             </div>
+
+                            <!-- Buscador de Empleado para Reportes -->
                             <div x-show="repTipo === 'empleado'">
-                                <label class="block text-xs text-gray-500 mb-1">Seleccionar Empleado</label>
-                                <select x-model="repEmpleadoSel" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
-                                    <option value="">Todos los empleados</option>
-                                    <template x-for="u in usuarios" :key="u.Email">
-                                        <option :value="u.Email" x-text="u.Nombre"></option>
+                                <label class="block text-xs text-gray-500 mb-1">Buscar Empleado</label>
+                                <input type="text" x-model="repEmpleadoBuscado" @input="filtrarRepEmpleados()" placeholder="Ej: Juan o juan@correo.com" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg mb-1">
+                                <div x-show="repEmpleadoBuscado && repEmpleadoSel === ''" class="border border-gray-200 rounded-lg max-h-32 overflow-y-auto divide-y mb-1">
+                                    <template x-for="u in repEmpleadosFiltrados" :key="u.Email">
+                                        <div @click="selectRepEmpleado(u)" class="p-2 hover:bg-blue-50 cursor-pointer text-sm">
+                                            <span x-text="`${u.Nombre} (${u.Email})`"></span>
+                                        </div>
                                     </template>
-                                </select>
+                                    <div x-show="repEmpleadosFiltrados.length === 0" class="p-2 text-xs text-gray-400 text-center">No encontrado</div>
+                                </div>
+                                <div x-show="repEmpleadoSel !== ''" class="p-2 bg-blue-50 rounded-lg flex justify-between items-center text-sm">
+                                    <span x-text="repEmpleadoBuscado"></span>
+                                    <button @click="repEmpleadoSel = ''; repEmpleadoBuscado = ''; generarReportes()" class="text-red-500 text-xs font-medium">Quitar</button>
+                                </div>
                             </div>
-                            <div>
+
+                            <div :class="repTipo === 'general' ? 'md:col-span-2' : ''">
                                 <label class="block text-xs text-gray-500 mb-1">Desde (Opcional)</label>
                                 <input type="date" x-model="repFechaInicio" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
                             </div>
-                            <div>
+                            <div :class="repTipo === 'general' ? 'md:col-span-2' : ''">
                                 <label class="block text-xs text-gray-500 mb-1">Hasta (Opcional)</label>
                                 <input type="date" x-model="repFechaFin" @change="generarReportes()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white">
                             </div>
@@ -467,7 +486,6 @@
                             </table>
                         </div>
                     </div>
-
                 </div>
 
             </main>
@@ -689,7 +707,9 @@
                 syncInterval: null, lastSync: 0, 
                 confirmModal: { show: false, title: '', message: '', action: null }, 
                 // Variables para Reportes
-                repTipo: 'general', repVehiculoSel: '', repEmpleadoSel: '',
+                repTipo: 'general', 
+                repVehiculoBuscado: '', repVehiculosFiltrados: [], repVehiculoSel: '',
+                repEmpleadoBuscado: '', repEmpleadosFiltrados: [], repEmpleadoSel: '',
                 repFechaInicio: '', repFechaFin: '',
                 repResumen: { total: 0, count: 0 },
                 chartVehiculos: null, chartEmpleados: null,
@@ -981,19 +1001,51 @@
                 // =====================================================================
                 // LÓGICA DE REPORTES HWC
                 // =====================================================================
+                
+                // Buscadores de reportes
+                filtrarRepVehiculos() {
+                    this.repVehiculoSel = ''; // Limpiar selección al escribir
+                    if(!this.repVehiculoBuscado) { this.repVehiculosFiltrados = []; return; }
+                    let term = this.repVehiculoBuscado.toLowerCase();
+                    this.repVehiculosFiltrados = this.vehiculos.filter(v => 
+                        String(v.VIN).toLowerCase().includes(term) || 
+                        String(v.Model).toLowerCase().includes(term) || 
+                        String(v.AsignadoA).toLowerCase().includes(term)
+                    );
+                    this.generarReportes();
+                },
+                selectRepVehiculo(v) {
+                    this.repVehiculoSel = v.VIN;
+                    this.repVehiculoBuscado = `${v.VIN} - ${v.Model}`;
+                    this.repVehiculosFiltrados = [];
+                    this.generarReportes();
+                },
+                filtrarRepEmpleados() {
+                    this.repEmpleadoSel = ''; // Limpiar selección al escribir
+                    if(!this.repEmpleadoBuscado) { this.repEmpleadosFiltrados = []; return; }
+                    let term = this.repEmpleadoBuscado.toLowerCase();
+                    this.repEmpleadosFiltrados = this.usuarios.filter(u => 
+                        String(u.Nombre).toLowerCase().includes(term) || 
+                        String(u.Email).toLowerCase().includes(term)
+                    );
+                    this.generarReportes();
+                },
+                selectRepEmpleado(u) {
+                    this.repEmpleadoSel = u.Email;
+                    this.repEmpleadoBuscado = `${u.Nombre} (${u.Email})`;
+                    this.repEmpleadosFiltrados = [];
+                    this.generarReportes();
+                },
+
                 get repGastosFiltrados() {
                     let filtered = this.gastos;
                     
-                    // Filtro por fecha
+                    // CORRECCIÓN DE FECHAS: Usar strings para evitar problemas de zona horaria
                     if(this.repFechaInicio) {
-                        let startDate = new Date(this.repFechaInicio);
-                        startDate.setHours(0, 0, 0, 0);
-                        filtered = filtered.filter(g => new Date(g.Fecha) >= startDate);
+                        filtered = filtered.filter(g => String(g.Fecha).split('T')[0] >= this.repFechaInicio);
                     }
                     if(this.repFechaFin) {
-                        let endDate = new Date(this.repFechaFin);
-                        endDate.setHours(23, 59, 59, 999);
-                        filtered = filtered.filter(g => new Date(g.Fecha) <= endDate);
+                        filtered = filtered.filter(g => String(g.Fecha).split('T')[0] <= this.repFechaFin);
                     }
 
                     // Filtro por tipo
@@ -1008,12 +1060,9 @@
 
                 generarReportes() {
                     let filtered = this.repGastosFiltrados;
-
-                    // Calcular resumen
                     let total = filtered.reduce((sum, g) => sum + parseFloat(g.Monto), 0);
                     this.repResumen = { total: total, count: filtered.length };
 
-                    // Renderizar gráficos solo si es general
                     if(this.repTipo === 'general') {
                         this.$nextTick(() => {
                             this.renderCharts(filtered);
@@ -1025,7 +1074,6 @@
                     if(this.chartVehiculos) this.chartVehiculos.destroy();
                     if(this.chartEmpleados) this.chartEmpleados.destroy();
 
-                    // Top Vehículos
                     let groupedVehiculos = {};
                     filtered.forEach(g => {
                         if(!groupedVehiculos[g.VIN]) groupedVehiculos[g.VIN] = 0;
@@ -1053,7 +1101,6 @@
                         });
                     }
 
-                    // Top Empleados
                     let groupedEmpleados = {};
                     filtered.forEach(g => {
                         let nombre = this.getNombreByEmail(g.Email);
@@ -1088,7 +1135,6 @@
                     let filtered = this.repGastosFiltrados;
                     let wb = XLSX.utils.book_new();
 
-                    // Hoja 1: Detalle
                     let dataDetalles = filtered.map(g => ({
                         Fecha: new Date(g.Fecha).toLocaleDateString(),
                         Vehiculo: g.VIN,
@@ -1099,14 +1145,12 @@
                     let wsDetalles = XLSX.utils.json_to_sheet(dataDetalles);
                     XLSX.utils.book_append_sheet(wb, wsDetalles, "Detalle Gastos");
 
-                    // Hoja 2: Top Autos
                     let groupedVeh = {};
                     filtered.forEach(g => { if(!groupedVeh[g.VIN]) groupedVeh[g.VIN] = 0; groupedVeh[g.VIN] += parseFloat(g.Monto); });
                     let dataTopVeh = Object.keys(groupedVeh).map(vin => ({ Vehiculo: vin, "Total Gastado": groupedVeh[vin].toFixed(2) })).sort((a,b) => b["Total Gastado"] - a["Total Gastado"]);
                     let wsTopVeh = XLSX.utils.json_to_sheet(dataTopVeh);
                     XLSX.utils.book_append_sheet(wb, wsTopVeh, "Top Autos");
 
-                    // Hoja 3: Top Empleados
                     let groupedEmp = {};
                     filtered.forEach(g => { let n = this.getNombreByEmail(g.Email); if(!groupedEmp[n]) groupedEmp[n] = 0; groupedEmp[n] += parseFloat(g.Monto); });
                     let dataTopEmp = Object.keys(groupedEmp).map(emp => ({ Empleado: emp, "Total Registrado": groupedEmp[emp].toFixed(2) })).sort((a,b) => b["Total Registrado"] - a["Total Registrado"]);
@@ -1122,14 +1166,20 @@
                     const doc = new jsPDF();
                     let filtered = this.repGastosFiltrados;
                     
-                    // Encabezado
                     doc.setFontSize(20);
                     doc.text("Reporte HWC - Fleet Control", 14, 20);
                     doc.setFontSize(10);
                     doc.setTextColor(100);
+                    
                     let tipoTexto = "Tipo: General";
-                    if(this.repTipo === 'vehiculo' && this.repVehiculoSel) tipoTexto = `Tipo: Por Vehículo (${this.repVehiculoSel})`;
-                    if(this.repTipo === 'empleado' && this.repEmpleadoSel) tipoTexto = `Tipo: Por Empleado (${this.getNombreByEmail(this.repEmpleadoSel)})`;
+                    if(this.repTipo === 'vehiculo' && this.repVehiculoSel) {
+                        let v = this.vehiculos.find(x => x.VIN === this.repVehiculoSel);
+                        tipoTexto = `Tipo: Por Vehículo (${v ? v.Model + ' - ' + v.VIN : this.repVehiculoSel})`;
+                    }
+                    if(this.repTipo === 'empleado' && this.repEmpleadoSel) {
+                        let u = this.usuarios.find(x => x.Email === this.repEmpleadoSel);
+                        tipoTexto = `Tipo: Por Empleado (${u ? u.Nombre : this.repEmpleadoSel})`;
+                    }
                     doc.text(tipoTexto, 14, 26);
                     
                     let rangoFechas = "Periodo: Toda la historia";
@@ -1145,9 +1195,7 @@
 
                     let finalY = 50;
 
-                    // Si es general, incluir tops
                     if(this.repTipo === 'general') {
-                        // Top Autos
                         let groupedVeh = {};
                         filtered.forEach(g => { if(!groupedVeh[g.VIN]) groupedVeh[g.VIN] = 0; groupedVeh[g.VIN] += parseFloat(g.Monto); });
                         let topVeh = Object.keys(groupedVeh).map(vin => [vin, `$${groupedVeh[vin].toFixed(2)}`]).sort((a,b) => parseFloat(b[1].replace('$','')) - parseFloat(a[1].replace('$',''))).slice(0,5);
@@ -1161,7 +1209,6 @@
                         });
                         finalY = doc.lastAutoTable.finalY + 5;
 
-                        // Top Empleados
                         let groupedEmp = {};
                         filtered.forEach(g => { let n = this.getNombreByEmail(g.Email); if(!groupedEmp[n]) groupedEmp[n] = 0; groupedEmp[n] += parseFloat(g.Monto); });
                         let topEmp = Object.keys(groupedEmp).map(emp => [emp, `$${groupedEmp[emp].toFixed(2)}`]).sort((a,b) => parseFloat(b[1].replace('$','')) - parseFloat(a[1].replace('$',''))).slice(0,5);
@@ -1176,7 +1223,6 @@
                         finalY = doc.lastAutoTable.finalY + 10;
                     }
 
-                    // Tabla Detallada
                     doc.autoTable({
                         startY: finalY,
                         head: [['Fecha', 'Vehículo', 'Empleado', 'Concepto', 'Monto']],
